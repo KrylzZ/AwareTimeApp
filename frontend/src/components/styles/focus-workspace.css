@@ -1,0 +1,1267 @@
+.main-form.focus-page {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  max-width: none;
+  margin: 0;
+  padding: 16px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--prof);
+  color: var(--text);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
+  text-align: left;
+  text-transform: none;
+}
+
+.focus-page-header {
+  display: flex;
+  flex: 0 0 auto;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 2px 2px 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.focus-page-header p {
+  margin: 0 0 3px;
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+}
+
+.focus-page-header h1 {
+  margin: 0;
+  color: var(--text);
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.035em;
+}
+
+.focus-page-header > span {
+  padding: 7px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.focus-page .container-row {
+  display: grid;
+  flex: 0 0 auto;
+  grid-template-columns: minmax(150px, 0.7fr) minmax(220px, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 0;
+}
+
+.focus-page .today-data-container {
+  display: block;
+  min-width: 0;
+  max-height: none;
+}
+
+.focus-page .today-data-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  min-height: 38px;
+  padding: 0 11px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: var(--prof);
+  color: var(--text);
+  font-size: 11px;
+  font-weight: 600;
+  text-align: left;
+}
+
+.focus-page .today-data-toggle:hover {
+  background: var(--bg);
+}
+
+.focus-page .today-data-content {
+  width: min(460px, calc(100vw - 120px));
+  max-height: 360px;
+  padding: 12px;
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  background: var(--prof);
+  box-shadow: 0 16px 36px rgba(15, 23, 42, 0.16);
+}
+
+.focus-page .today-data-header {
+  gap: 10px;
+  margin-bottom: 8px;
+  color: var(--text);
+  font-size: 11px;
+}
+
+.focus-page .view-mode-selector {
+  min-height: 30px;
+  margin: 0;
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 10px;
+}
+
+.focus-page .today-data-content ul {
+  height: auto;
+  max-height: 280px;
+  margin: 0;
+  padding: 0;
+  overflow: auto;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  text-align: left;
+}
+
+.focus-page .today-data-content li {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 5px 10px;
+  height: auto;
+  min-height: 34px;
+  margin: 0;
+  padding: 8px 9px;
+  border-bottom: 1px solid var(--border);
+  border-radius: 0;
+  background: transparent;
+  color: var(--text);
+  font-size: 10px;
+}
+
+.focus-page .countdown-task {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  min-height: 38px;
+  max-height: none;
+  padding: 0 12px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 11px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.focus-page .progress-bar-todaytask-container {
+  background: var(--grey);
+}
+
+.focus-page .progress-bar-todaytask {
+  background: color-mix(in srgb, var(--success) 75%, var(--nav));
+}
+
+.focus-page .countdown-text {
+  z-index: 1;
+  margin: 0;
+  color: var(--text);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.focus-page .focus-modes {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 3px;
+  min-width: 0;
+  max-height: none;
+  margin: 0;
+  padding: 4px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg);
+}
+
+.focus-page .focus-mode {
+  min-height: 30px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.focus-page .focus-mode:hover {
+  background: var(--grey);
+}
+
+.focus-page .focus-mode.active {
+  border: 0;
+  background: var(--prof);
+  color: var(--text);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.12);
+}
+
+.focus-page .focus-content {
+  display: grid;
+  flex: 1;
+  grid-template-columns: minmax(180px, 0.75fr) minmax(340px, 1.5fr) minmax(230px, 0.9fr);
+  grid-template-rows: 40px minmax(0, 1fr) 154px;
+  align-items: stretch;
+  gap: 11px;
+  width: 100%;
+  height: auto;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.focus-page .autoselect-container {
+  position: static;
+  grid-row: 1;
+  grid-column: 1 / -1;
+  display: flex;
+  width: auto;
+  height: auto;
+  min-width: 0;
+  margin: 0;
+  padding: 5px 11px;
+  gap: 0;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: var(--bg);
+  box-shadow: none;
+  z-index: auto;
+}
+
+.focus-page .autoselect-stats {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  width: 100%;
+  font-family: inherit;
+}
+
+.focus-page .autoselect-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+
+.focus-page .autoselect-stat:last-child {
+  margin-left: auto;
+}
+
+.focus-page .stat-label {
+  color: var(--muted);
+  font-size: 9px;
+}
+
+.focus-page .stat-value {
+  min-width: 0;
+  color: var(--text);
+  font-size: 11px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.focus-page .autoselect-button {
+  min-width: 46px;
+  min-height: 27px;
+  padding: 0 8px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  color: #fff;
+  font-size: 9px;
+}
+
+.focus-page .autoselect-button.on {
+  background: var(--success);
+}
+
+.focus-page .autoselect-button.off {
+  background: var(--muted);
+}
+
+.focus-page .timeline-container {
+  grid-row: 2 / 4;
+  grid-column: 1;
+  width: 100%;
+  height: auto;
+  min-height: 0;
+  margin: 0;
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg);
+}
+
+.focus-page .timeline {
+  height: 1446.5px;
+  border-color: var(--border);
+  background: var(--prof);
+}
+
+.focus-page .timeline::after {
+  display: none;
+}
+
+.focus-page .hour-marker {
+  left: 7px;
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 600;
+}
+
+.focus-page .hour-divider {
+  left: 45px;
+  width: calc(100% - 52px);
+  background: var(--border);
+}
+
+.focus-page .current-time-line {
+  height: 2px;
+  background: var(--danger);
+}
+
+.focus-page .task-block {
+  left: 50px;
+  width: calc(100% - 58px);
+  padding: 4px 6px;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--accent) 25%, var(--border));
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--accent) 12%, var(--prof));
+  color: var(--text);
+  font-size: 10px;
+  box-shadow: none;
+}
+
+.focus-page .task-name {
+  top: 4px;
+  left: 6px;
+  overflow: hidden;
+  color: var(--text);
+  font-size: 9px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.focus-page .task-block.selected {
+  z-index: 20;
+  border-color: var(--accent);
+  background: var(--accent);
+  color: #fff;
+}
+
+.focus-page .task-block.selected .task-name {
+  color: #fff;
+}
+
+.focus-page .select-task-button {
+  top: 3px;
+  right: 3px;
+  padding: 3px 6px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: var(--prof);
+  color: var(--text);
+  font-size: 8px;
+  box-shadow: none;
+}
+
+.focus-page .task-block.dimmed::after {
+  border: 1px dashed var(--muted);
+}
+
+.focus-page .task-list,
+.focus-page .manual-mode-container,
+.focus-page .free-mode-container {
+  grid-row: 2 / 4;
+  grid-column: 2;
+  width: 100%;
+  height: auto;
+  min-height: 0;
+  margin: 0;
+  padding: 14px;
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg);
+  box-shadow: none;
+  text-align: left;
+}
+
+.focus-page .task-list h2,
+.focus-page .manual-mode-container h2,
+.focus-page .free-mode-container h2 {
+  margin: 0 0 8px;
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.focus-page .task-list > p {
+  margin: 0 0 10px;
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.focus-page .task-table {
+  width: 100%;
+  border-collapse: collapse;
+  border-spacing: 0;
+  font-size: 10px;
+}
+
+.focus-page .task-table th,
+.focus-page .task-table td {
+  padding: 9px 8px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+  text-align: left;
+  vertical-align: middle;
+}
+
+.focus-page .task-table th {
+  position: sticky;
+  top: 0;
+  background: var(--grey);
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.focus-page .task-list-item {
+  background: transparent;
+  cursor: pointer;
+}
+
+.focus-page .task-list-item:hover {
+  background: color-mix(in srgb, var(--accent) 6%, var(--bg));
+}
+
+.focus-page .task-list-item.selected {
+  background: color-mix(in srgb, var(--accent) 12%, var(--bg));
+  color: var(--text);
+}
+
+.focus-page .manual-mode-container {
+  gap: 12px;
+  align-items: stretch;
+}
+
+.focus-page .manual-selected-tasks,
+.focus-page .task-select {
+  width: 50%;
+  height: 100%;
+  min-width: 0;
+  margin: 0;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: var(--prof);
+  box-shadow: none;
+  color: var(--text);
+}
+
+.focus-page .manual-selected-tasks h2,
+.focus-page .task-select h2 {
+  min-width: 0;
+  margin: 0 0 10px;
+  color: var(--text);
+  font-size: 12px;
+}
+
+.focus-page .manual-selected-tasks ul {
+  height: auto;
+  max-height: 260px;
+  padding: 0;
+  overflow: auto;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.focus-page .manual-selected-tasks li {
+  height: auto;
+  min-height: 34px;
+  margin: 0 0 6px;
+  padding: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+}
+
+.focus-page .manual-selected-tasks li strong {
+  color: var(--text);
+}
+
+.focus-page .task-select p {
+  margin: 0 0 10px;
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.focus-page .free-mode-container {
+  gap: 12px;
+}
+
+.focus-page .free-mode-left,
+.focus-page .free-mode-right {
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: var(--prof);
+}
+
+.focus-page .record-creation {
+  display: flex;
+  gap: 8px;
+}
+
+.focus-page .record-creation input {
+  width: 100%;
+  min-width: 0;
+  height: 36px;
+  padding: 0 9px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.focus-page .record-creation button,
+.focus-page .focus-button {
+  min-height: 34px;
+  padding: 0 12px;
+  border: 1px solid var(--nav);
+  border-radius: 8px;
+  background: var(--nav);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.focus-page .free-mode-right ul {
+  height: auto;
+  max-height: 220px;
+  padding: 0;
+  overflow: auto;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.focus-page .free-mode-right li {
+  height: auto;
+  min-height: 36px;
+  margin: 0 0 6px;
+  padding: 7px 9px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 10px;
+}
+
+.focus-page .free-mode-right li.active {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, var(--bg));
+  color: var(--text);
+}
+
+.focus-page .delete-record-button {
+  min-height: 24px;
+  width: 24px;
+  margin: 0;
+  border-radius: 6px;
+  background: var(--danger);
+  color: #fff;
+}
+
+.focus-page .note-container {
+  grid-row: 2;
+  grid-column: 3;
+  display: flex;
+  flex-direction: column;
+  height: auto;
+  min-height: 0;
+  margin: 0;
+  padding: 12px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg);
+  box-shadow: none;
+}
+
+.focus-page .note-header {
+  margin-bottom: 8px;
+}
+
+.focus-page .note-button {
+  min-height: 28px;
+  padding: 0 9px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--prof);
+  color: var(--muted);
+  font-size: 9px;
+}
+
+.focus-page .note-body {
+  min-height: 0;
+}
+
+.focus-page .note-label {
+  margin-bottom: 6px;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.focus-page textarea.note-input {
+  flex: 1;
+  width: 100%;
+  height: auto;
+  min-height: 0;
+  padding: 9px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--prof);
+  color: var(--text);
+  font-size: 10px;
+}
+
+.focus-page .pomodoro-timer {
+  grid-row: 3;
+  grid-column: 3;
+  width: 100%;
+  min-height: 0;
+  margin: 0;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: linear-gradient(145deg, color-mix(in srgb, var(--nav) 12%, var(--prof)), var(--prof)) !important;
+  color: var(--text);
+  box-shadow: none;
+}
+
+.focus-page .pomodoro-header {
+  gap: 8px;
+  margin: 0;
+}
+
+.focus-page .swap-icon {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--prof);
+  color: var(--muted);
+  cursor: pointer;
+  transition: none;
+}
+
+.focus-page .swap-icon:hover {
+  transform: none;
+  background: var(--bg);
+}
+
+.focus-page .swap-icon:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.focus-page .pomodoro-modes {
+  justify-content: flex-end;
+  gap: 4px;
+  margin: 0;
+}
+
+.focus-page .pomodoro-mode {
+  padding: 5px 7px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  color: var(--muted);
+  font-size: 8px;
+  font-weight: 600;
+}
+
+.focus-page .pomodoro-mode.active {
+  border-color: var(--border);
+  background: var(--bg);
+  color: var(--text);
+  box-shadow: none;
+}
+
+.focus-page .pomodoro-timer > p {
+  margin: 10px 0;
+  color: var(--text);
+  font-size: 32px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.focus-page .timer-controls {
+  gap: 7px;
+}
+
+.focus-page .timer-controls button {
+  min-height: 32px;
+  padding: 0 11px;
+  border: 1px solid var(--nav);
+  border-radius: 7px;
+  background: var(--nav);
+  color: #fff;
+  font-size: 9px;
+  font-weight: 600;
+  box-shadow: none;
+}
+
+.focus-page .timer-controls button:last-child {
+  border-color: var(--border);
+  background: var(--prof);
+  color: var(--muted);
+}
+
+.focus-page .task-item-focus,
+.focus-page .work-item-focus {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--text);
+  box-shadow: none;
+}
+
+.focus-page .task-item-focus:hover,
+.focus-page .work-item-focus:hover,
+.focus-page .task-item-focus.active,
+.focus-page .work-item-focus.active {
+  transform: none;
+}
+
+@media (max-width: 1100px) {
+  .focus-page {
+    overflow: auto;
+  }
+
+  .focus-page .focus-content {
+    flex: none;
+    grid-template-columns: minmax(180px, 0.75fr) minmax(0, 1.25fr);
+    grid-template-rows: 40px minmax(380px, 1fr) 170px;
+    height: auto;
+    overflow: visible;
+  }
+
+  .focus-page .timeline-container {
+    grid-row: 2;
+    grid-column: 1;
+  }
+
+  .focus-page .task-list,
+  .focus-page .manual-mode-container,
+  .focus-page .free-mode-container {
+    grid-row: 2;
+    grid-column: 2;
+  }
+
+  .focus-page .note-container {
+    grid-row: 3;
+    grid-column: 1;
+  }
+
+  .focus-page .pomodoro-timer {
+    grid-row: 3;
+    grid-column: 2;
+  }
+}
+
+@media (max-width: 700px) {
+  .focus-page {
+    padding: 12px;
+  }
+
+  .focus-page .container-row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+  }
+
+  .focus-page .focus-modes {
+    justify-content: flex-start;
+  }
+
+  .focus-page .focus-content {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: 40px minmax(330px, auto) minmax(240px, auto) minmax(170px, auto) minmax(160px, auto);
+    gap: 9px;
+  }
+
+  .focus-page .autoselect-container {
+    grid-row: 1;
+    grid-column: 1;
+  }
+
+  .focus-page .timeline-container {
+    grid-row: 2;
+    grid-column: 1;
+  }
+
+  .focus-page .task-list,
+  .focus-page .manual-mode-container,
+  .focus-page .free-mode-container {
+    grid-row: 3;
+    grid-column: 1;
+  }
+
+  .focus-page .note-container {
+    grid-row: 4;
+    grid-column: 1;
+  }
+
+  .focus-page .pomodoro-timer {
+    grid-row: 5;
+    grid-column: 1;
+  }
+
+  .focus-page .autoselect-stats {
+    gap: 12px;
+  }
+
+  .focus-page .task-table th,
+  .focus-page .task-table td {
+    padding: 7px 5px;
+    font-size: 9px;
+  }
+}
+
+.focus-select-overlay {
+  position: fixed;
+  z-index: 10000;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  background: rgba(15, 23, 42, 0.46);
+  backdrop-filter: blur(3px);
+}
+
+.focus-select-dialog {
+  display: flex;
+  flex-direction: column;
+  width: min(760px, calc(100vw - 32px));
+  max-height: min(78vh, 620px);
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--prof);
+  color: var(--text);
+  box-shadow: 0 24px 70px rgba(15, 23, 42, 0.28);
+}
+
+.focus-select-header {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px 20px 14px;
+  border-bottom: 1px solid var(--border);
+}
+
+.focus-select-header p {
+  margin: 0 0 4px;
+  color: var(--accent);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+}
+
+.focus-select-header h2 {
+  margin: 0;
+  color: var(--text);
+  font-size: 17px;
+  letter-spacing: -0.03em;
+}
+
+.focus-select-header span {
+  display: block;
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.focus-select-close {
+  display: grid;
+  flex: 0 0 30px;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted);
+}
+
+.focus-select-close:hover {
+  border-color: var(--border);
+  background: var(--bg);
+  color: var(--text);
+}
+
+.focus-select-grid {
+  display: grid;
+  flex: 1;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  min-height: 0;
+  padding: 14px 18px;
+  overflow: hidden;
+}
+
+.focus-select-pane {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  padding: 12px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg);
+}
+
+.focus-select-pane-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.focus-select-pane-heading h3 {
+  margin: 0;
+  color: var(--text);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.focus-select-pane-heading > span {
+  display: grid;
+  place-items: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  border-radius: 6px;
+  background: var(--prof);
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 650;
+}
+
+.focus-select-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.focus-select-list .work-item-focus,
+.focus-select-list .task-item-focus {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  width: 100%;
+  min-height: 0;
+  margin: 0;
+  padding: 9px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--prof);
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.focus-select-list .work-item-focus strong,
+.focus-select-list .task-item-focus strong {
+  max-width: 100%;
+  overflow: hidden;
+  color: var(--text);
+  font-size: 10px;
+  font-weight: 650;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.focus-select-list .work-item-focus span,
+.focus-select-list .task-item-focus span {
+  color: var(--muted);
+  font-size: 9px;
+  line-height: 1.4;
+}
+
+.focus-select-list .work-item-focus.active,
+.focus-select-list .task-item-focus.active {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, var(--prof));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 35%, transparent);
+}
+
+.focus-select-list .focus-select-empty {
+  margin: 0;
+  padding: 18px 10px;
+  color: var(--muted);
+  font-size: 10px;
+  text-align: center;
+}
+
+.focus-select-actions {
+  display: flex;
+  flex: 0 0 auto;
+  justify-content: flex-end;
+  padding: 12px 18px;
+  border-top: 1px solid var(--border);
+}
+
+.focus-select-done {
+  min-height: 33px;
+  padding: 0 13px;
+  border: 1px solid var(--nav);
+  border-radius: 8px;
+  background: var(--nav);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 650;
+}
+
+.focus-page .free-mode-container {
+  gap: 10px;
+  align-self: start;
+  height: auto;
+  max-height: 100%;
+  overflow: visible;
+  padding: 10px;
+  text-align: left;
+}
+
+.focus-page .free-mode-left,
+.focus-page .free-mode-right {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  gap: 10px;
+  min-height: 128px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: var(--prof);
+}
+
+.focus-page .free-mode-container h2 {
+  margin: 0;
+  color: var(--text);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.focus-page .record-creation {
+  gap: 6px;
+}
+
+.focus-page .record-creation input {
+  height: 34px;
+  font-size: 10px;
+}
+
+.focus-page .record-creation button {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-height: 34px;
+  padding: 0 10px;
+  border-color: var(--nav);
+  border-radius: 8px;
+  background: var(--nav);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+.focus-page .current-record {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+  margin: 0;
+  padding: 9px 10px;
+  border: 1px solid color-mix(in srgb, var(--accent) 25%, var(--border));
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--accent) 7%, var(--prof));
+  text-align: left;
+}
+
+.focus-page .current-record span {
+  color: var(--muted);
+  font-size: 9px;
+}
+
+.focus-page .current-record strong {
+  overflow: hidden;
+  color: var(--text);
+  font-size: 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.focus-page .free-mode-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.focus-page .free-mode-heading > span {
+  color: var(--muted);
+  font-size: 9px;
+  white-space: nowrap;
+}
+
+.focus-page .free-mode-heading strong {
+  margin-left: 4px;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+.focus-page .free-mode-right .record-list {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  height: auto;
+  max-height: 180px;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  text-align: left;
+}
+
+.focus-page .record-list li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto 26px;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  min-height: 34px;
+  margin: 0;
+  padding: 5px 7px 5px 9px;
+  border: 1px solid var(--border);
+  border-left: 3px solid transparent;
+  border-radius: 0;
+  background: var(--prof);
+  color: var(--text);
+  cursor: pointer;
+  text-align: left;
+}
+
+.focus-page .record-list li:hover {
+  border-color: var(--border);
+  border-left-color: color-mix(in srgb, var(--accent) 55%, var(--border));
+  background: var(--bg);
+}
+
+.focus-page .record-list li.active {
+  border-color: var(--border);
+  border-left-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 7%, var(--prof));
+}
+
+.focus-page .record-name {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--text);
+  font-size: 10px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.focus-page .record-time {
+  color: var(--muted);
+  font-size: 9px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.focus-page .delete-record-button {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  min-height: 24px;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--prof);
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.focus-page .delete-record-button:hover {
+  border-color: var(--danger);
+  background: color-mix(in srgb, var(--danger) 9%, var(--prof));
+  color: var(--danger);
+}
+
+@media (max-width: 600px) {
+  .focus-select-overlay {
+    padding: 10px;
+  }
+
+  .focus-select-dialog {
+    width: calc(100vw - 20px);
+    max-height: calc(100dvh - 20px);
+  }
+
+  .focus-select-grid {
+    grid-template-columns: minmax(0, 1fr);
+    overflow-y: auto;
+  }
+
+  .focus-select-pane {
+    min-height: 140px;
+    max-height: 220px;
+  }
+}

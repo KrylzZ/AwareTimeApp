@@ -5,12 +5,13 @@
   border-radius: 10px;
   color: var(--text);
   padding: 5px 15px;
-  position: absolute;
-  top: 60px;
-  /* width: 320px; */
-  width: 92%;
-  height: 55%;
-  z-index: 2;
+  position: fixed;
+  top: 72px;
+  right: 24px;
+  left: auto;
+  width: min(340px, calc(100vw - 32px));
+  max-height: min(55vh, 480px);
+  z-index: 9999;
   overflow-y: scroll;
   border-bottom: 10px solid var(--bg);
 }
@@ -29,14 +30,23 @@
   background-color: var(--bg);
 }
 .not-header button {
-  border: none;
-  outline: none;
+  display: grid;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  border: 1px solid var(--border);
+  border-radius: 7px;
   margin-left: auto;
-  font-size: 18px;
-  font-weight: 600;
+  outline: none;
   cursor: pointer;
   background-color: inherit;
   color: var(--text);
+}
+
+.not-header button:hover {
+  border-color: var(--accent);
+  background-color: var(--prof);
+  color: var(--accent);
 }
 .not-items {
   display: flex;

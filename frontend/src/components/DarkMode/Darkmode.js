@@ -1,27 +1,38 @@
-import React from "react";
-import { IoMdSunny, IoIosMoon } from "react-icons/io";
+import React, { useEffect, useState } from "react";
+import { MdDarkMode, MdLightMode } from "react-icons/md";
 import "./darkmode.css";
 
 const DarkMode = () => {
-  const setDarkMode = () => {
-    document.querySelector("body").setAttribute("data-theme", "dark");
+  const [isDark, setIsDark] = useState(
+    () =>
+      localStorage.getItem("theme") === "dark" ||
+      document.body.getAttribute("data-theme") === "dark"
+  );
+
+  useEffect(() => {
+    document.body.setAttribute("data-theme", isDark ? "dark" : "light");
+  }, [isDark]);
+
+  const toggleTheme = () => {
+    const nextIsDark = !isDark;
+    setIsDark(nextIsDark);
+    document.body.setAttribute("data-theme", nextIsDark ? "dark" : "light");
+    localStorage.setItem("theme", nextIsDark ? "dark" : "light");
   };
-  const setLightMode = () => {
-    document.querySelector("body").setAttribute("data-theme", "light");
-  };
-  const changeTheme = (e)=>{
-    if(e.target.checked) setDarkMode();
-    else setLightMode();
-  }
 
   return (
-    <div className="dark_mode">
-      <input className="dark_mode_input" type="checkbox" id="darkmode-toggle" onChange={changeTheme} />
-      <label className="dark_mode_label" htmlFor="darkmode-toggle">
-        <IoMdSunny color="#d8860b" size={16} />
-        <IoIosMoon color="black" size={16} />
-      </label>
-    </div>
+    <button
+      type="button"
+      className={`theme-toggle${isDark ? " is-dark" : ""}`}
+      onClick={toggleTheme}
+      aria-label={`Switch to ${isDark ? "light" : "dark"} mode`}
+      aria-pressed={isDark}
+      title={`Switch to ${isDark ? "light" : "dark"} mode`}
+    >
+      <span className="theme-toggle-thumb" />
+      <MdLightMode className="theme-icon theme-icon-light" />
+      <MdDarkMode className="theme-icon theme-icon-dark" />
+    </button>
   );
 };
 

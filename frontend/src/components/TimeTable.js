@@ -1,14 +1,15 @@
 import React, { useEffect, useState } from "react";
 import { useRef } from "react";
+import { FiX } from "react-icons/fi";
 
-import "aos/dist/aos.css";
 import "./styles/timetable.css";
+import "./styles/timetable-workspace.css";
 
 const colors = [
-  "#D766F0", "#10DD2F", "#ADD8E6", "#F756AC", "#FAA046", "#F576E6",
-  "#33FFD7", "#FF3333", "#90EE90", "#E7D745", "#5733FF", "#33A1FF",
-  "#A1FF33", "#FFFF00", "#F08080", "#FFA07A", "#FFB6C1", "#20B2AA",
-  "#D8BFD8", "#EFEF68",
+  "#DBEAFE", "#DCFCE7", "#EDE9FE", "#FCE7F3", "#FFEDD5", "#CCFBF1",
+  "#E0E7FF", "#FAE8FF", "#FEF3C7", "#CFFAFE", "#E2E8F0", "#D1FAE5",
+  "#E0F2FE", "#FCE7F3", "#EDE9FE", "#DBEAFE", "#DCFCE7", "#FFEDD5",
+  "#CCFBF1", "#E0E7FF",
 ];
 
 
@@ -349,6 +350,15 @@ const TimeTable = ({ works }) => {
   const currentDay = today.getDay();
   const startOfWeek = new Date(today);
   startOfWeek.setDate(today.getDate() - (currentDay === 0 ? 6 : currentDay - 1));
+  const endOfWeek = new Date(startOfWeek);
+  endOfWeek.setDate(startOfWeek.getDate() + 6);
+  const weekRange = `${startOfWeek.toLocaleDateString("vi-VN", {
+    day: "2-digit",
+    month: "short",
+  })} – ${endOfWeek.toLocaleDateString("vi-VN", {
+    day: "2-digit",
+    month: "short",
+  })}`;
 
   const bodyContainerRef = useRef(null);
   const nowTimeRef = useRef(null);
@@ -425,64 +435,105 @@ useEffect(() => {
   return () => clearTimeout(idleTimeout);
 }, [nowTimePosition]);
 
+const visibleWeekDays = weekTasks
+  .map((day, index) => ({ day, index }))
+  .filter(({ day }) => day.tasks.length > 0);
+const visibleTaskCount = visibleWeekDays.reduce(
+  (count, { day }) => count + day.tasks.length,
+  0
+);
+const emptyWeekDayCount = Math.max(0, weekTasks.length - visibleWeekDays.length);
 
   return (
-    <div className="main-form" data-aos="zoom-in">
-      <header className="menu-bar">
-        <h1>TimeTable</h1>
+    <div className="main-form timetable-page">
+      <header className="menu-bar timetable-toolbar">
+        <div className="timetable-title-group">
+          <p>MY SCHEDULE</p>
+          <h1>TimeTable</h1>
+        </div>
+        <div className="timetable-header-actions">
+          <span className="timetable-week-label">Week of {weekRange}</span>
         <button
           className="view-tasklist-btn"
           onClick={() => setIsTaskListVisible(true)}
         >
           View Task List
         </button>
+        </div>
       </header>
 
       {isTaskListVisible && (
         <div className="tasklist-overlay">
-          <div className="tasklist-container">
+          <section
+            className="tasklist-container"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="tasklist-title"
+          >
+            <header className="tasklist-header">
+              <div>
+                <p>WEEKLY OVERVIEW</p>
+                <h2 id="tasklist-title">Tasks this week</h2>
+                <span>
+                  {visibleTaskCount} {visibleTaskCount === 1 ? "task" : "tasks"} · {weekRange}
+                  {emptyWeekDayCount > 0 &&
+                    ` · ${emptyWeekDayCount} empty ${emptyWeekDayCount === 1 ? "day" : "days"} hidden`}
+                </span>
+              </div>
             <button
               className="close-btn"
               onClick={() => setIsTaskListVisible(false)}
+              aria-label="Close task list"
             >
-              Close
+              <FiX size={17} aria-hidden="true" />
             </button>
+            </header>
+            {visibleWeekDays.length > 0 ? (
             <div className="tasklist">
-              {weekTasks.map((day, index) => (
+              {visibleWeekDays.map(({ day, index }) => (
                 <div key={index} className="day-tasks">
                   <h3>
-                    {days[index]} ({day.date.toLocaleDateString("vi-VN")})
+                    <span>{days[index]}</span>
+                    <time dateTime={day.date.toISOString()}>
+                      {day.date.toLocaleDateString("vi-VN", {
+                        day: "2-digit",
+                        month: "short",
+                      })}
+                    </time>
                   </h3>
-                  {day.tasks.length > 0 ? (
-                    day.tasks.map((task, taskIndex) => (
+                  {day.tasks.map((task, taskIndex) => (
                       <div
-  key={taskIndex}
-  className="task-item-timetable"
-  style={{
-    backgroundColor: taskColors.get(task.name) || "#FFFFFF",
-    color: "#FFFFFF",
-  }}
->
-  <div className="task-content">
-    <input
-      type="checkbox"
-      checked={task.tickState}
-      onChange={() => toggleTaskTick(index, taskIndex)}
-    />
-    <p>
-      <strong>{task.name}</strong> - {task.workName} ({task.startTime} - {task.endTime})
-    </p>
-  </div>
-</div>
-
-                    ))
-                  ) : (
-                    <p>No tasks</p>
-                  )}
+                        key={`${task.name}-${taskIndex}`}
+                        className="task-item-timetable"
+                        style={{
+                          backgroundColor: taskColors.get(task.name) || "#FFFFFF",
+                          color: "#172033",
+                        }}
+                      >
+                        <div className="task-content">
+                          <input
+                            type="checkbox"
+                            checked={task.tickState}
+                            onChange={() => toggleTaskTick(index, taskIndex)}
+                          />
+                          <p>
+                            <strong>{task.name}</strong>
+                            <span>{task.workName}</span>
+                            <time>{task.startTime} – {task.endTime}</time>
+                          </p>
+                        </div>
+                      </div>
+                    ))}
                 </div>
               ))}
             </div>
-          </div>
+            ) : (
+              <div className="tasklist-empty">
+                <strong>No tasks scheduled this week</strong>
+                <span>Add a task to a work item to see it here.</span>
+              </div>
+            )}
+          </section>
         </div>
       )}
 
@@ -549,7 +600,7 @@ useEffect(() => {
                         left: `${task.left}%`,
                         width: `calc(${task.width}% - 6px)`,
                         backgroundColor: taskColors.get(task.name) || "#FFFFFF",
-                        color: "#FFFFFF",
+                        color: "#172033",
                         position: "absolute",
                       }}
                     >

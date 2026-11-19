@@ -1,0 +1,491 @@
+.timetable-page {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 12px;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  margin: 0;
+  padding: 16px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--prof);
+  color: var(--text);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
+  text-align: left;
+  text-transform: none;
+}
+
+.timetable-page .timetable-toolbar {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 48px;
+  margin: 0;
+  padding: 0 2px 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.timetable-title-group p {
+  margin: 0 0 3px;
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+}
+
+.timetable-title-group h1 {
+  margin: 0;
+  color: var(--text);
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.035em;
+  text-shadow: none;
+}
+
+.timetable-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.timetable-week-label {
+  padding: 7px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.timetable-page .view-tasklist-btn {
+  min-height: 34px;
+  margin: 0;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--prof);
+  color: var(--text);
+  font-size: 10px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.timetable-page .view-tasklist-btn:hover {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 7%, var(--prof));
+  color: var(--accent);
+}
+
+.timetable-page .timetable-container {
+  position: relative;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  width: 100%;
+  height: auto;
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  background: var(--prof);
+  scrollbar-color: var(--border) transparent;
+  scrollbar-width: thin;
+}
+
+.timetable-page .header-row {
+  position: sticky;
+  top: 0;
+  z-index: 4;
+  display: flex;
+  flex: 0 0 58px;
+  width: 100%;
+  min-width: 900px;
+  height: 58px;
+  background: var(--prof);
+  box-shadow: none;
+  border-bottom: 1px solid var(--border);
+}
+
+.timetable-page .header-cell {
+  flex: 1 1 0;
+  min-width: 112px;
+  padding: 8px 5px;
+  border: 0;
+  border-right: 1px solid var(--border);
+  background: var(--prof);
+  color: var(--text);
+  font-size: 10px;
+  font-weight: 650;
+  line-height: 1.4;
+  text-align: center;
+}
+
+.timetable-page .header-cell.time-column {
+  flex: 0 0 82px;
+  min-width: 82px;
+  width: 82px;
+  color: var(--muted);
+  text-align: left;
+}
+
+.timetable-page .header-cell.today-highlight {
+  background: color-mix(in srgb, var(--accent) 9%, var(--prof));
+  color: var(--accent);
+}
+
+.timetable-page .header-cell .date-text {
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 500;
+}
+
+.timetable-page .body-container {
+  position: relative;
+  display: flex;
+  flex: 1;
+  width: 100%;
+  min-width: 900px;
+  min-height: 0;
+  height: auto;
+  overflow-x: hidden;
+  overflow-y: auto;
+  background: var(--prof);
+  scrollbar-color: var(--border) transparent;
+  scrollbar-width: thin;
+}
+
+.timetable-page .body-container > .column {
+  position: relative;
+  flex: 1 1 0;
+  min-width: 112px;
+  height: 1440px;
+  border-right: 1px solid var(--border);
+  border-left: 0;
+  background: var(--prof);
+}
+
+.timetable-page .body-container > .column.time-column {
+  flex: 0 0 82px;
+  min-width: 82px;
+  width: 82px;
+  background: var(--bg);
+}
+
+.timetable-page .time-slot {
+  position: relative;
+  display: flex;
+  flex: 0 0 60px;
+  align-items: flex-start;
+  justify-content: flex-start;
+  height: 60px;
+  padding: 8px 6px;
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  background: transparent;
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 500;
+  text-align: left;
+}
+
+.timetable-page .body-container > .column:not(.time-column) .time-slot {
+  padding: 0;
+  background: transparent;
+}
+
+.timetable-page .body-container > .column.time-column .time-slot {
+  font-variant-numeric: tabular-nums;
+}
+
+.timetable-page .task-block-timetable {
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  gap: 3px;
+  min-height: 28px;
+  padding: 6px 7px;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--text) 10%, transparent);
+  border-left: 3px solid var(--accent);
+  border-radius: 7px;
+  color: var(--text);
+  font-size: 9px;
+  line-height: 1.3;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+}
+
+.timetable-page .task-block-timetable span:first-child {
+  overflow: hidden;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.timetable-page .task-block-timetable span:last-child {
+  font-size: 8px !important;
+  opacity: 0.75;
+}
+
+.timetable-page .now-time {
+  z-index: 3;
+  height: 2px;
+  background: var(--danger);
+}
+
+.timetable-page .now-time-marker {
+  top: -4px;
+  width: 9px;
+  height: 9px;
+  background: var(--danger);
+}
+
+.timetable-page .tasklist-overlay {
+  z-index: 10000;
+  padding: 16px;
+  background: rgba(15, 23, 42, 0.42);
+  backdrop-filter: blur(3px);
+}
+
+.timetable-page .tasklist-container {
+  display: flex;
+  flex-direction: column;
+  width: min(760px, calc(100vw - 32px));
+  height: auto;
+  max-height: min(78vh, 620px);
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--prof);
+  color: var(--text);
+  box-shadow: 0 20px 50px rgba(15, 23, 42, 0.22);
+}
+
+.timetable-page .tasklist-header {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 17px 19px 14px;
+  border-bottom: 1px solid var(--border);
+}
+
+.timetable-page .tasklist-header p {
+  margin: 0 0 4px;
+  color: var(--accent);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+}
+
+.timetable-page .tasklist-header h2 {
+  margin: 0;
+  color: var(--text);
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+
+.timetable-page .tasklist-header span {
+  display: block;
+  margin-top: 5px;
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.timetable-page .close-btn {
+  display: grid;
+  flex: 0 0 30px;
+  position: static;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  font-size: 0;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.timetable-page .close-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.timetable-page .tasklist {
+  display: grid;
+  flex: 1;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  align-content: start;
+  gap: 10px;
+  min-height: 0;
+  margin: 0;
+  padding: 14px;
+  overflow-y: auto;
+}
+
+.timetable-page .day-tasks {
+  min-width: 0;
+  margin: 0;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.timetable-page .day-tasks h3 {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 0 0 7px;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 650;
+}
+
+.timetable-page .day-tasks h3 time {
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 500;
+}
+
+.timetable-page .task-item-timetable {
+  margin: 5px 0 0;
+  padding: 7px 8px;
+  border: 1px solid color-mix(in srgb, var(--text) 10%, transparent);
+  border-left: 3px solid var(--accent);
+  border-radius: 7px;
+  box-shadow: none;
+}
+
+.timetable-page .task-item-timetable .task-content {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.timetable-page .task-item-timetable .task-content p {
+  display: grid;
+  flex: 1;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 2px 8px;
+  min-width: 0;
+  margin: 0;
+  color: var(--text);
+  font-size: 9px;
+  line-height: 1.5;
+}
+
+.timetable-page .task-item-timetable .task-content p strong {
+  grid-column: 1 / -1;
+  overflow: hidden;
+  font-size: 10px;
+  font-weight: 650;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.timetable-page .task-item-timetable .task-content p span {
+  overflow: hidden;
+  color: var(--muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.timetable-page .task-item-timetable .task-content p time {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.timetable-page .task-item-timetable input[type="checkbox"] {
+  flex: 0 0 auto;
+  width: 15px;
+  height: 15px;
+  margin: 1px 0 0;
+  accent-color: var(--accent);
+}
+
+.timetable-page .tasklist-empty {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 32px 18px;
+  color: var(--muted);
+  text-align: center;
+}
+
+.timetable-page .tasklist-empty strong {
+  color: var(--text);
+  font-size: 12px;
+}
+
+.timetable-page .tasklist-empty span {
+  font-size: 10px;
+}
+
+@media (max-width: 900px) {
+  .timetable-page .timetable-container {
+    overflow: auto;
+  }
+
+  .timetable-page .header-row,
+  .timetable-page .body-container {
+    min-width: 900px;
+  }
+}
+
+@media (max-width: 600px) {
+  .timetable-page {
+    gap: 9px;
+    padding: 11px;
+  }
+
+  .timetable-page .timetable-toolbar {
+    align-items: flex-start;
+  }
+
+  .timetable-header-actions {
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 6px;
+  }
+
+  .timetable-week-label {
+    padding: 5px 7px;
+    font-size: 9px;
+  }
+
+  .timetable-page .view-tasklist-btn {
+    min-height: 30px;
+  }
+
+  .timetable-page .tasklist-overlay {
+    padding: 10px;
+  }
+
+  .timetable-page .tasklist-container {
+    width: calc(100vw - 20px);
+    max-height: calc(100dvh - 20px);
+  }
+
+  .timetable-page .tasklist {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 10px;
+  }
+}

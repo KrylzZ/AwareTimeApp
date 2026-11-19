@@ -6,7 +6,7 @@ import "./styles/calendar.css";
 
 const localizer = momentLocalizer(moment);
 
-const colorPalette = ["red", "#0099FF	", "#33FF00", "orange", "yellow", "pink", "purple", "cyan"];
+const colorPalette = ["#2563eb", "#0f766e", "#7c3aed", "#d97706", "#0891b2", "#db2777"];
 
 const Calendar = ({ works }) => {
   const [events, setEvents] = useState([]);
@@ -34,27 +34,34 @@ const Calendar = ({ works }) => {
   }
 
   return (
-    <div className="main-form" data-aos="zoom-in">
-      <header className="menu-bar">
-        <h1>Calendar</h1>
+    <main className="main-form calendar-page">
+      <header className="calendar-page-header">
+        <div>
+          <p>MY WORKSPACE / CALENDAR</p>
+          <h1>Calendar</h1>
+        </div>
+        <span>Plan your time and keep work in view.</span>
       </header>
       <BigCalendar
+        className="calendar-board"
         localizer={localizer}
         events={events}
         startAccessor="start"
         endAccessor="end"
-        style={{ height: '600px', width: '100%' }}
+        style={{ height: '100%', width: '100%' }}
         eventPropGetter={(event) => ({
-          className: 'custom-event',
+          className: 'calendar-event',
           style: {
-            backgroundColor: event.color,
-            marginTop: '2px',
-            marginBottom: '2px'
+            backgroundColor: `color-mix(in srgb, ${event.color} 14%, var(--prof))`,
+            borderLeft: `3px solid ${event.color}`,
+            borderRadius: "6px",
+            color: "var(--text)",
+            marginTop: "2px",
+            marginBottom: "2px",
           }
         })}
-        
       />
-    </div>
+    </main>
   );
 };
 

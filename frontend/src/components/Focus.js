@@ -1,160 +1,527 @@
 import React, { useEffect, useState, useCallback, useRef, useMemo } from "react";
+import { FiPlus, FiRepeat, FiTrash2, FiX } from "react-icons/fi";
+import {
+  clearResumableTimeSession,
+  createTimeSessionId,
+  getResumableTimeSession,
+  persistTimeSession,
+  setResumableTimeSession,
+} from "../utils/timeSessions";
 import "./styles/focus.css";
+import "./styles/focus-workspace.css";
+
+const TIMER_DURATIONS = {
+  pomodoro: 1500,
+  "short-break": 300,
+  "long-break": 900,
+};
 
 const Focus = ({ works = {}, toast }) => {
-  const [mode, setMode] = useState("auto");
-  const [selectedWork, setSelectedWork] = useState(null);
-  const [selectedTask, setSelectedTask] = useState(null);
-  const [currentTaskManual, setCurrentTaskManual] = useState(null);
+  const [restoredSession] = useState(getResumableTimeSession);
+  const restoredDuration = Math.max(0, Math.floor(restoredSession?.durationSeconds || 0));
+  const restoredActivity = restoredSession?.activity;
+  const availableWorks = useMemo(() => Object.values(works).flat(), [works]);
+  const restoredWork = restoredActivity?.workId
+    ? availableWorks.find((work) => work.id === restoredActivity.workId)
+    : availableWorks.find((work) => work.name === restoredActivity?.workName);
+  const restoredTask = restoredWork?.subWorks?.find(
+    (task) => task.name === restoredActivity?.taskName
+  );
+  const restoredTimerMode = [
+    "pomodoro",
+    "short-break",
+    "long-break",
+    "stopwatch",
+  ].includes(restoredSession?.timerMode)
+    ? restoredSession.timerMode
+    : "pomodoro";
+  const restoredTaskMode =
+    ["auto", "manual", "free"].includes(restoredSession?.taskMode)
+      ? restoredSession.taskMode
+      : restoredTimerMode === "stopwatch"
+        ? "free"
+        : "auto";
+
+  const [mode, setMode] = useState(restoredTaskMode);
+  const [selectedWork, setSelectedWork] = useState(restoredWork || null);
+  const [selectedTask, setSelectedTask] = useState(restoredTask || null);
+  const [currentTaskManual, setCurrentTaskManual] = useState(() => {
+    if (restoredTaskMode !== "manual" || !restoredTask || !restoredWork) return null;
+    return {
+      ...restoredTask,
+      workName: restoredWork.name,
+      workStartDate: restoredWork.startDate,
+      workEndDate: restoredWork.endDate,
+      startTime: new Date(`1970-01-01T${restoredTask.startTime}:00`),
+      endTime: new Date(`1970-01-01T${restoredTask.endTime}:00`),
+    };
+  });
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [tempWork, setTempWork] = useState(null);
   const [tempTask, setTempTask] = useState(null);
-  const [timeLeft, setTimeLeft] = useState(1500);
+  const [timeLeft, setTimeLeft] = useState(() => {
+    return Math.max(
+      0,
+      (TIMER_DURATIONS[restoredTimerMode] || 1500) - restoredDuration
+    );
+  });
   const [isRunning, setIsRunning] = useState(false);
-  const [cycle, setCycle] = useState(0);
-  const [isFocusPhase, setIsFocusPhase] = useState(true);
   const [tasksForToday, setTasksForToday] = useState([]);
   const [currentTime, setCurrentTime] = useState(new Date());
   const timelineRef = useRef(null);
-  const [selectedTaskName, setSelectedTaskName] = useState(null);
+  const [selectedTaskName, setSelectedTaskName] = useState(
+    restoredActivity?.taskName || null
+  );
   const [noteContent, setNoteContent] = useState("");
-  const [isFreeMode, setIsFreeMode] = useState(false);
-  const [freeModeTime, setFreeModeTime] = useState(0); // Thời gian đếm giờ tự do
-  const [currentMode, setCurrentMode] = useState("pomodoro"); // Lưu chế độ hiện tại
+  const [isFreeMode, setIsFreeMode] = useState(restoredTimerMode === "stopwatch");
+  const [freeModeTime, setFreeModeTime] = useState(
+    restoredTimerMode === "stopwatch" ? restoredDuration : 0
+  );
+  const [currentMode, setCurrentMode] = useState(
+    restoredTimerMode === "stopwatch" ? "pomodoro" : restoredTimerMode
+  );
   const [countdownTimeTask, setCountdownTimeTask] = useState(0);
-  const [isTaskSelected, setIsTaskSelected] = useState(false);
+  const [isTaskSelected, setIsTaskSelected] = useState(
+    restoredActivity?.type === "task" && Boolean(restoredActivity.taskName)
+  );
   const [todayDataTimeCount, setTodayDataTimeCount] = useState([]);
   const [isTodayDataVisible, setIsTodayDataVisible] = useState(false);
-  const [lastTaskStartTime, setLastTaskStartTime] = useState(null);
   const intervalRef = useRef(null);
   const [viewMode, setViewMode] = useState("byTime");
   const [isAutoSelectEnabled, setIsAutoSelectEnabled] = useState(false);
   const [selectedTasksManual, setSelectedTasksManual] = useState([]);
-  
-  const [currentRecord, setCurrentRecord] = useState(null);
-  const [records, setRecords] = useState([]); // Danh sách tất cả các record
+
+  const [currentRecord, setCurrentRecord] = useState(() =>
+    restoredActivity?.type === "record"
+      ? { name: restoredActivity.name, time: restoredDuration }
+      : null
+  );
+  const [records, setRecords] = useState(() =>
+    restoredActivity?.type === "record"
+      ? [{ name: restoredActivity.name, time: restoredDuration }]
+      : []
+  );
   const [recordCounter, setRecordCounter] = useState(0);
 
   const [recordNameInput, setRecordNameInput] = useState("");
+
+  // Timer state - lưu timestamp bắt đầu
+  const sessionStartRef = useRef(null);
+  const elapsedRef = useRef(restoredDuration);
+  const activeTimeSessionRef = useRef(restoredSession);
+  const lastPersistedDurationRef = useRef(restoredDuration);
+  const persistenceErrorShownRef = useRef(false);
+
+  const getElapsedSeconds = useCallback(() => {
+    if (!sessionStartRef.current) return elapsedRef.current;
+    return elapsedRef.current + Math.floor((Date.now() - sessionStartRef.current) / 1000);
+  }, []);
+
+  const getCurrentActivity = useCallback(() => {
+    if (currentRecord) {
+      return {
+        type: "record",
+        name: currentRecord.name,
+        workId: null,
+        workName: null,
+        taskName: null,
+      };
+    }
+
+    const taskName =
+      mode === "manual"
+        ? currentTaskManual?.name
+        : selectedTaskName || selectedTask?.name;
+    if (!taskName) return null;
+
+    const work =
+      selectedWork ||
+      availableWorks.find(
+        (item) =>
+          item.subWorks?.some((task) => task.name === taskName)
+      );
+    const workName = selectedWork?.name || currentTaskManual?.workName || work?.name || null;
+
+    return {
+      type: "task",
+      name: taskName,
+      workId: work?.id || null,
+      workName,
+      taskName,
+    };
+  }, [
+    availableWorks,
+    currentRecord,
+    currentTaskManual,
+    mode,
+    selectedTask,
+    selectedTaskName,
+    selectedWork,
+  ]);
+
+  const persistSessionSafely = useCallback(
+    (session) => {
+      try {
+        persistTimeSession(session);
+        persistenceErrorShownRef.current = false;
+      } catch (error) {
+        console.error("Failed to save a focus session in browser storage.", error);
+        if (!persistenceErrorShownRef.current) {
+          toast?.error?.("Không thể lưu phiên tập trung trên trình duyệt này.");
+          persistenceErrorShownRef.current = true;
+        }
+      }
+    },
+    [toast]
+  );
+
+  const closeCurrentTimeSession = useCallback(
+    (status = "paused") => {
+      const session = activeTimeSessionRef.current;
+      if (
+        !session ||
+        session.status === "completed" ||
+        (session.status === "paused" && status === "paused")
+      ) {
+        return;
+      }
+
+      const durationSeconds = Math.max(
+        session.durationSeconds || 0,
+        getElapsedSeconds()
+      );
+      const endedAt = new Date().toISOString();
+      const segments = Array.isArray(session.segments) ? session.segments : [];
+      const lastSegmentIndex = segments.length - 1;
+      const previousDuration = segments
+        .slice(0, lastSegmentIndex)
+        .reduce((total, segment) => total + (segment.durationSeconds || 0), 0);
+      const updatedSession = {
+        ...session,
+        status,
+        durationSeconds,
+        endedAt,
+        updatedAt: endedAt,
+        segments: segments.map((segment, index) =>
+          index === lastSegmentIndex && !segment.endedAt
+            ? {
+                ...segment,
+                endedAt,
+                durationSeconds: Math.max(0, durationSeconds - previousDuration),
+              }
+            : segment
+        ),
+      };
+
+      activeTimeSessionRef.current = updatedSession;
+      lastPersistedDurationRef.current = durationSeconds;
+      persistSessionSafely(updatedSession);
+
+      if (status === "completed") {
+        clearResumableTimeSession();
+      } else {
+        setResumableTimeSession(updatedSession.id);
+      }
+    },
+    [getElapsedSeconds, persistSessionSafely]
+  );
+
+  const updateRunningTimeSession = useCallback(
+    (durationSeconds) => {
+      const session = activeTimeSessionRef.current;
+      if (
+        !session ||
+        session.status !== "running" ||
+        durationSeconds === lastPersistedDurationRef.current
+      ) {
+        return;
+      }
+
+      const updatedAt = new Date().toISOString();
+      const segments = Array.isArray(session.segments) ? session.segments : [];
+      const lastSegmentIndex = segments.length - 1;
+      const previousDuration = segments
+        .slice(0, lastSegmentIndex)
+        .reduce((total, segment) => total + (segment.durationSeconds || 0), 0);
+      const updatedSession = {
+        ...session,
+        durationSeconds,
+        updatedAt,
+        segments: segments.map((segment, index) =>
+          index === lastSegmentIndex
+            ? {
+                ...segment,
+                durationSeconds: Math.max(0, durationSeconds - previousDuration),
+              }
+            : segment
+        ),
+      };
+
+      activeTimeSessionRef.current = updatedSession;
+      lastPersistedDurationRef.current = durationSeconds;
+      persistSessionSafely(updatedSession);
+    },
+    [persistSessionSafely]
+  );
+
+  const startOrResumeTimeSession = useCallback(() => {
+    const activity = getCurrentActivity();
+    if (!activity) return;
+
+    const timerMode = isFreeMode ? "stopwatch" : currentMode;
+    const currentSession = activeTimeSessionRef.current;
+    const isSameActivity =
+      currentSession &&
+      currentSession.activity?.type === activity.type &&
+      currentSession.activity?.name === activity.name &&
+      currentSession.activity?.workId === activity.workId &&
+      currentSession.taskMode === mode &&
+      currentSession.timerMode === timerMode;
+
+    if (isSameActivity && currentSession.status === "running") return;
+
+    if (isSameActivity && currentSession.status === "paused") {
+      const startedAt = new Date().toISOString();
+      const resumedSession = {
+        ...currentSession,
+        status: "running",
+        endedAt: null,
+        updatedAt: startedAt,
+        segments: [
+          ...(currentSession.segments || []),
+          { startedAt, endedAt: null, durationSeconds: 0 },
+        ],
+      };
+      activeTimeSessionRef.current = resumedSession;
+      sessionStartRef.current = Date.now();
+      lastPersistedDurationRef.current = resumedSession.durationSeconds;
+      setResumableTimeSession(resumedSession.id);
+      persistSessionSafely(resumedSession);
+      return;
+    }
+
+    if (currentSession) closeCurrentTimeSession("completed");
+
+    const startedAt = new Date().toISOString();
+    const session = {
+      id: createTimeSessionId(),
+      schemaVersion: 1,
+      source: "focus-timer",
+      activity,
+      taskMode: mode,
+      timerMode,
+      status: "running",
+      startedAt,
+      endedAt: null,
+      durationSeconds: 0,
+      createdAt: startedAt,
+      updatedAt: startedAt,
+      segments: [{ startedAt, endedAt: null, durationSeconds: 0 }],
+    };
+
+    activeTimeSessionRef.current = session;
+    elapsedRef.current = 0;
+    sessionStartRef.current = Date.now();
+    lastPersistedDurationRef.current = 0;
+    if (timerMode === "stopwatch") {
+      setFreeModeTime(0);
+    } else {
+      setTimeLeft(TIMER_DURATIONS[timerMode] || TIMER_DURATIONS.pomodoro);
+    }
+    setResumableTimeSession(session.id);
+    persistSessionSafely(session);
+  }, [
+    closeCurrentTimeSession,
+    currentMode,
+    getCurrentActivity,
+    isFreeMode,
+    mode,
+    persistSessionSafely,
+  ]);
+
   const totalFreeTime = useMemo(() => {
     return records.reduce((total, record) => total + record.time, 0);
   }, [records]);
 
   const toggleFreeMode = () => {
+    closeCurrentTimeSession("completed");
     if (isFreeMode) {
       // Chuyển về chế độ Pomodoro
       setIsFreeMode(false);
       setFreeModeTime(0);
-      setTimeLeft(isFocusPhase ? 1500 : timeLeft);
+      elapsedRef.current = 0;
+      sessionStartRef.current = null;
+      setTimeLeft(1500);
+      setMode("auto"); // Set lại mode
     } else {
       // Chuyển sang chế độ tự do
       setIsFreeMode(true);
       setFreeModeTime(0);
       setIsRunning(false);
+      elapsedRef.current = 0;
+      sessionStartRef.current = null;
+      setMode("free"); // Set mode thành free
     }
   };
-  
+
   useEffect(() => {
-    if (timeLeft === 0) {
-      if (currentMode === "pomodoro") {
-        setPomodoroCount((prevCount) => {
-          const newCount = prevCount + 1;
-          if (newCount % 4 === 0) {
-            setCurrentMode("long-break");
-            setTimeLeft(900); // Long Break - 15 phút
-          } else {
-            setCurrentMode("short-break");
-            setTimeLeft(300); // Short Break - 5 phút
-          }
-          return newCount;
-        });
-      } else if (currentMode === "short-break" || currentMode === "long-break") {
-        setCurrentMode("pomodoro");
-        setTimeLeft(1500); // Pomodoro - 25 phút
-      }
-    }
-  }, [timeLeft, currentMode]);
-  
+    if (timeLeft !== 0) return;
+    closeCurrentTimeSession("completed");
 
-  // Chu kỳ Pomodoro
-  const handlePomodoroComplete = useCallback(() => {
-    setIsRunning(false);
-    if (isFocusPhase) {
-      setIsFocusPhase(false);
-      setCycle((prev) => prev + 1);
-      if ((cycle + 1) % 4 === 0) {
-        setTimeLeft(900);
-        toast.info("Long Break! Take a 15-minute rest.");
-      } else {
-        setTimeLeft(300);
-        toast.info("Short Break! Take a 5-minute rest.");
-      }
+    if (currentMode === "pomodoro") {
+      setPomodoroCount((prevCount) => {
+        const newCount = prevCount + 1;
+        const nextMode = newCount % 4 === 0 ? "long-break" : "short-break";
+        elapsedRef.current = 0;
+        sessionStartRef.current = null;
+        setCurrentMode(nextMode);
+        setTimeLeft(nextMode === "long-break" ? 900 : 300);
+        return newCount;
+      });
     } else {
-      setIsFocusPhase(true);
+      elapsedRef.current = 0;
+      sessionStartRef.current = null;
+      setCurrentMode("pomodoro");
       setTimeLeft(1500);
-      toast.success("Back to Focus! 25 minutes.");
     }
-  }, [cycle, isFocusPhase, toast]);
+  }, [timeLeft, currentMode, closeCurrentTimeSession]);
 
 
-// Quản lý realTimeTaskCount khi đồng hồ chạy
+// Quản lý tất cả timers - dùng setInterval 1000ms, chạy ngầm khi tab ẩn
 useEffect(() => {
-  if (!isRunning || !selectedTaskName || currentMode !== "pomodoro") {
-    clearInterval(intervalRef.current);
+  if (!isRunning) {
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
     return;
   }
 
-  clearInterval(intervalRef.current);
+  // Set start time khi bắt đầu session
+  if (!sessionStartRef.current) {
+    sessionStartRef.current = Date.now();
+  }
 
+  // Timer chạy mỗi 1000ms, nhưng tính elapsed từ thực tế
   intervalRef.current = setInterval(() => {
-    setTodayDataTimeCount((prev) =>
-      prev.map((task) => {
-        if (task.name === selectedTaskName) {
-          const updatedRealTime = task.realTimeTaskCount + 1;
-          const percentCompleted = Math.floor(
-            (updatedRealTime / task.totalTimeSlotInSeconds) * 100
+    const now = Date.now();
+    const elapsedSeconds =
+      elapsedRef.current + Math.floor((now - sessionStartRef.current) / 1000);
+    updateRunningTimeSession(elapsedSeconds);
+
+    // Cách này đảm bảo khi quay lại tab, display sẽ hiển thị thời gian chính xác
+
+    if (!isFreeMode) {
+      const duration = TIMER_DURATIONS[currentMode] || TIMER_DURATIONS.pomodoro;
+      setTimeLeft(Math.max(0, duration - elapsedSeconds));
+    }
+
+    // Update task real-time count (Auto mode)
+    if (isTaskSelected && selectedTaskName && currentMode === "pomodoro") {
+      setTodayDataTimeCount((prev) =>
+        prev.map((task) => {
+          if (task.name === selectedTaskName) {
+            const updatedRealTime = elapsedSeconds;
+            const percentCompleted = Math.floor(
+              (updatedRealTime / task.totalTimeSlotInSeconds) * 100
+            );
+            return {
+              ...task,
+              realTimeTaskCount: updatedRealTime,
+              status: `${percentCompleted}%`,
+            };
+          }
+          return task;
+        })
+      );
+    }
+
+    // Update manual task real-time count (Manual mode)
+    if (mode === "manual" && currentTaskManual) {
+      setSelectedTasksManual((prev) => {
+        const existingTask = prev.find((task) => task.name === currentTaskManual.name);
+        if (existingTask) {
+          return prev.map((task) =>
+            task.name === currentTaskManual.name
+              ? { ...task, time: elapsedSeconds }
+              : task
           );
-          return {
-            ...task,
-            realTimeTaskCount: updatedRealTime,
-            status: `${percentCompleted}%`,
-          };
+        } else {
+          return [
+            ...prev,
+            {
+              name: currentTaskManual.name,
+              time: elapsedSeconds,
+            },
+          ];
         }
-        return task;
-      })
-    );
-  }, 1000);
+      });
+    }
 
-  return () => clearInterval(intervalRef.current);
-}, [isRunning, selectedTaskName, currentMode]);
-
-//realtime của manual
-useEffect(() => {
-  if (!isRunning || mode !== "manual" || !currentTaskManual) return;
-
-  const timer = setInterval(() => {
-    setSelectedTasksManual((prev) => {
-      const existingTask = prev.find((task) => task.name === currentTaskManual.name);
-      if (existingTask) {
-        return prev.map((task) =>
-          task.name === currentTaskManual.name
-            ? { ...task, time: task.time + 1 }
-            : task
+    // Update countdown timer
+    if (isTaskSelected && currentMode === "pomodoro") {
+      setCountdownTimeTask((prev) => {
+        // Calculate từ elapsed time
+        const initialCountdown = taskTimeSlotToSeconds(
+          calculateTimeSlot(
+            tasksForToday.find((t) => t.name === selectedTaskName)?.startTime || new Date(),
+            tasksForToday.find((t) => t.name === selectedTaskName)?.endTime || new Date()
+          )
         );
-      } else {
-        return [
-          ...prev,
-          {
-            name: currentTaskManual.name,
-            time: 1,
-          },
-        ];
-      }
-    });
-  }, 1000);
+        const remaining = Math.max(0, initialCountdown - elapsedSeconds);
+        return remaining;
+      });
+    }
 
-  return () => clearInterval(timer);
-}, [isRunning, mode, currentTaskManual]);
+    // Update Free mode time & records
+    if (isFreeMode && currentRecord) {
+      setFreeModeTime(elapsedSeconds);
+      setRecords((prev) =>
+        prev.map((record) =>
+          record.name === currentRecord.name
+            ? { ...record, time: elapsedSeconds }
+            : record
+        )
+      );
+    }
+
+    // Update records time during pomodoro
+    if (currentRecord && !isFreeMode) {
+      setRecords((prev) =>
+        prev.map((record) =>
+          record.name === currentRecord.name
+            ? { ...record, time: elapsedSeconds }
+            : record
+        )
+      );
+    }
+  }, 250);
+
+  return () => {
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+    }
+  };
+}, [isRunning, selectedTaskName, currentMode, isTaskSelected, mode, currentTaskManual, isFreeMode, currentRecord, tasksForToday, updateRunningTimeSession]);
+
+useEffect(() => {
+  if (isRunning) {
+    startOrResumeTimeSession();
+  } else {
+    closeCurrentTimeSession("paused");
+  }
+}, [isRunning, startOrResumeTimeSession, closeCurrentTimeSession]);
+
+useEffect(() => {
+  const handlePageHide = () => closeCurrentTimeSession("paused");
+  window.addEventListener("pagehide", handlePageHide);
+
+  return () => {
+    window.removeEventListener("pagehide", handlePageHide);
+    closeCurrentTimeSession("paused");
+  };
+}, [closeCurrentTimeSession]);
+
 
 
 const totalRealTime = useMemo(() => {
@@ -169,7 +536,11 @@ const totalTasks = todayDataTimeCount.length;
 
 const handleStartPause = () => {
   if (isRunning) {
-    clearInterval(intervalRef.current);
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+    }
+    elapsedRef.current = getElapsedSeconds();
+    sessionStartRef.current = null;
     setIsRunning(false);
   } else {
     if (!isTaskSelected && !currentRecord) {
@@ -178,26 +549,6 @@ const handleStartPause = () => {
     }
 
     setIsRunning(true);
-
-    intervalRef.current = setInterval(() => {
-      if (isTaskSelected) {
-        setTodayDataTimeCount((prev) =>
-          prev.map((task) =>
-            task.name === selectedTaskName
-              ? { ...task, realTimeTaskCount: task.realTimeTaskCount + 1 }
-              : task
-          )
-        );
-      } else if (currentRecord) {
-        setRecords((prev) =>
-          prev.map((record) =>
-            record.name === currentRecord.name
-              ? { ...record, time: record.time + 1 }
-              : record
-          )
-        );
-      }
-    }, 1000);
   }
 };
 
@@ -207,7 +558,7 @@ const handleStartPause = () => {
         const taskTimeSlot = calculateTimeSlot(task.startTime, task.endTime);
         const [hours, minutes] = taskTimeSlot.split(":").map(Number);
         const totalTimeSlotInSeconds = hours * 3600 + minutes * 60;
-  
+
         return {
           name: task.name,
           date: new Date().toDateString(),
@@ -221,11 +572,13 @@ const handleStartPause = () => {
       })
     );
   }, [tasksForToday]);
-  
-  
-  const [pomodoroCount, setPomodoroCount] = useState(0);
-  console.log(pomodoroCount);
+
+
+  const [, setPomodoroCount] = useState(0);
   const handleSkip = () => {
+    closeCurrentTimeSession("completed");
+    elapsedRef.current = 0;
+    sessionStartRef.current = null;
     if (currentMode === "pomodoro") {
       setPomodoroCount((prevCount) => {
         const newCount = prevCount + 1;
@@ -245,61 +598,16 @@ const handleStartPause = () => {
     }
   };
 
-  // THỜI GIAN CHO COUNTDOWN TIME
-  useEffect(() => {
-    let countdownTimer;
-    if (isTaskSelected && isRunning && (currentMode === "pomodoro" || isFreeMode)) {
-      countdownTimer = setInterval(() => {
-        setCountdownTimeTask((prev) => Math.max(prev - 1, 0));
-      }, 1000);
-    }
-    return () => clearInterval(countdownTimer);
-  }, [isRunning, isTaskSelected, currentMode, isFreeMode]);
-  
-    useEffect(() => {
-      let timer;
-      if (isRunning && timeLeft > 0) {
-        timer = setInterval(() => {
-          setTimeLeft((prev) => prev - 1);
-    
-          if (currentRecord) {
-            setRecords((prev) =>
-              prev.map((record) =>
-                record.name === currentRecord.name
-                  ? { ...record, time: record.time + 1 }
-                  : record
-              )
-            );
-          }
-        }, 1000);
-      } else if (timeLeft === 0) {
-        handlePomodoroComplete();
-      }
-      return () => clearInterval(timer);
-    }, [isRunning, timeLeft, currentRecord]);
-    
 
-  // Freemode count time
+  // THỜI GIAN CHO COUNTDOWN TIME - removed (handled in unified timer)
+
+  // Update current time every minute
   useEffect(() => {
-    let freeModeTimer;
-    if (isFreeMode && isRunning && currentRecord) {
-      freeModeTimer = setInterval(() => {
-        setFreeModeTime((prev) => prev + 1);
-  
-        // Cập nhật thời gian của Record
-        setRecords((prev) =>
-          prev.map((record) =>
-            record.name === currentRecord.name
-              ? { ...record, time: record.time + 1 }
-              : record
-          )
-        );
-      }, 1000);
-    }
-    return () => clearInterval(freeModeTimer);
-  }, [isFreeMode, isRunning, currentRecord]);
-  
-  // Chọn và bỏ chọn task
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 60000);
+    return () => clearInterval(timer);
+  }, []);
   const handleSelectTaskBlock = (taskName) => {
     if (mode !== "auto") {
       toast.error("This feature is only available in Auto mode.");
@@ -309,36 +617,45 @@ const handleStartPause = () => {
     if (isAutoSelectEnabled) {
       setIsAutoSelectEnabled(false);
     }
-  
+
     if (selectedTaskName === taskName) {
+      closeCurrentTimeSession("completed");
       if (isRunning) {
-        clearInterval(intervalRef.current);
+        if (intervalRef.current) {
+          clearInterval(intervalRef.current);
+        }
       }
+      elapsedRef.current = 0;
+      sessionStartRef.current = null;
+      setTimeLeft(TIMER_DURATIONS[currentMode] || TIMER_DURATIONS.pomodoro);
       setSelectedTaskName(null);
       setIsTaskSelected(false);
       setCountdownTimeTask(0);
-      setLastTaskStartTime(null);
       setIsRunning(false);
       return;
     }
-  
+
     // Chuyển sang task mới
+    closeCurrentTimeSession("completed");
+    if (intervalRef.current) clearInterval(intervalRef.current);
+    elapsedRef.current = 0;
+    sessionStartRef.current = null;
+    setTimeLeft(TIMER_DURATIONS[currentMode] || TIMER_DURATIONS.pomodoro);
+    setIsRunning(false);
     const selectedTask = tasksForToday.find((task) => task.name === taskName);
     setSelectedTaskName(taskName);
-    
-  
+
+
     if (selectedTask) {
       const taskTimeSlotInSeconds = taskTimeSlotToSeconds(
         calculateTimeSlot(selectedTask.startTime, selectedTask.endTime)
       );
       const taskData = todayDataTimeCount.find((task) => task.name === taskName);
       const taskWorkedTime = taskData ? taskData.realTimeTaskCount : 0;
-  
+
       const remainingTime = Math.max(taskTimeSlotInSeconds - taskWorkedTime, 0);
-      console.log(lastTaskStartTime);
       setCountdownTimeTask(remainingTime);
       setIsTaskSelected(true);
-      setLastTaskStartTime(null);
     } else {
       setCountdownTimeTask(0);
       setIsTaskSelected(false);
@@ -346,9 +663,15 @@ const handleStartPause = () => {
   };
 
   const handleSelectRecord = (recordName) => {
+    closeCurrentTimeSession("completed");
+    if (intervalRef.current) clearInterval(intervalRef.current);
+    elapsedRef.current = 0;
+    sessionStartRef.current = null;
+    setFreeModeTime(0);
+    setTimeLeft(TIMER_DURATIONS[currentMode] || TIMER_DURATIONS.pomodoro);
+    setIsRunning(false);
     if (currentRecord?.name === recordName) {
       setCurrentRecord(null);
-      setIsRunning(false);
     } else {
       const selectedRecord = records.find((record) => record.name === recordName);
       if (selectedRecord) {
@@ -356,18 +679,26 @@ const handleStartPause = () => {
       }
     }
   };
-  
+
   const handleDeleteRecord = (recordName) => {
     if (currentRecord?.name === recordName) {
+      closeCurrentTimeSession("completed");
       setCurrentRecord(null);
       setIsRunning(false);
+      elapsedRef.current = 0;
+      sessionStartRef.current = null;
     }
     setRecords((prev) => prev.filter((record) => record.name !== recordName));
   };
-  
-  
+
+
   //Mode Free - create new record
   const handleCreateRecord = () => {
+    closeCurrentTimeSession("completed");
+    if (intervalRef.current) clearInterval(intervalRef.current);
+    elapsedRef.current = 0;
+    sessionStartRef.current = null;
+    setIsRunning(false);
     const newName =
       recordNameInput.trim() || `Unknow Record ${recordCounter + 1}`;
     const newRecord = {
@@ -375,30 +706,16 @@ const handleStartPause = () => {
       time: 0,
     };
     setRecords([...records, newRecord]);
-    setCurrentRecord(newRecord); 
+    setCurrentRecord(newRecord);
     setRecordNameInput("");
     setRecordCounter((prev) => prev + 1);
   };
-  
-  useEffect(() => {
-    if (isFreeMode && isRunning && currentRecord) {
-      const timer = setInterval(() => {
-        setRecords((prevRecords) =>
-          prevRecords.map((record) =>
-            record.name === currentRecord.name
-              ? { ...record, time: record.time + 1 }
-              : record
-          )
-        );
-      }, 1000);
-  
-      return () => clearInterval(timer);
-    }
-  }, [isFreeMode, isRunning, currentRecord]);
-  
-  
-  
-  
+
+  // Note: Freemode timer is handled in the unified timer useEffect above
+
+
+
+
   const formatTime = (seconds) => {
     const hours = Math.floor(seconds / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
@@ -407,32 +724,24 @@ const handleStartPause = () => {
       .toString()
       .padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
   };
-  
-  // Update current time every minute
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentTime(new Date());
-    }, 6000);
-    return () => clearInterval(timer);
-  }, []);
 
   useEffect(() => {
     if (currentMode === "short-break" || currentMode === "long-break") {
       setIsRunning(false);
     }
   }, [currentMode]);
-  
+
 
   // Tự động cuộn đến current-time-line khi mở trang
   useEffect(() => {
-  if (timelineRef.current) {
-    const currentTimePosition = currentTime.getHours() * 60 + currentTime.getMinutes();
-    timelineRef.current.scrollTo({
-      top: currentTimePosition - 50,
-      behavior: "smooth",
-    });
-  }
-}, [currentTime]);
+    if (timelineRef.current) {
+      const currentTimePosition = currentTime.getHours() * 60 + currentTime.getMinutes();
+      timelineRef.current.scrollTo({
+        top: currentTimePosition - 50,
+        behavior: "smooth",
+      });
+    }
+  }, [currentTime]);
 
   // Calculate tasks for today
   const calculateTasksForToday = useCallback(() => {
@@ -484,8 +793,20 @@ const handleStartPause = () => {
             tasks.push({
               ...task,
               workName: work.name,
-              startTime: new Date(today.setHours(startHour, startMinute)),
-              endTime: new Date(today.setHours(endHour, endMinute)),
+              startTime: new Date(
+                today.getFullYear(),
+                today.getMonth(),
+                today.getDate(),
+                startHour,
+                startMinute
+              ),
+              endTime: new Date(
+                today.getFullYear(),
+                today.getMonth(),
+                today.getDate(),
+                endHour,
+                endMinute
+              ),
             });
           }
         });
@@ -496,19 +817,19 @@ const handleStartPause = () => {
     setTasksForToday(sortedTasks);
   }, [works]);
 
-  const autoSelectTask = useCallback(() => {
+  const autoSelectTask = () => {
     if (!isAutoSelectEnabled) {
       setIsAutoSelectEnabled(true);
     }
-  
+
     const availableTasks = todayDataTimeCount.filter(
       (task) => parseInt(task.status.replace("%", ""), 10) < 100
     );
-  
+
     if (availableTasks.length === 0) return;
-  
+
     let selectedTask = null;
-  
+
     // Ưu tiên chọn task theo chế độ xem
     if (viewMode === "byPercent") {
       availableTasks.sort((a, b) => {
@@ -523,28 +844,28 @@ const handleStartPause = () => {
         const taskAStartMinutes =
           tasksForToday.find((task) => task.name === a.name)?.startTime?.getHours() * 60 +
           tasksForToday.find((task) => task.name === a.name)?.startTime?.getMinutes() || Infinity;
-  
+
         const taskBStartMinutes =
           tasksForToday.find((task) => task.name === b.name)?.startTime?.getHours() * 60 +
           tasksForToday.find((task) => task.name === b.name)?.startTime?.getMinutes() || Infinity;
-  
+
         const diffA = Math.abs(taskAStartMinutes - currentMinutes);
         const diffB = Math.abs(taskBStartMinutes - currentMinutes);
-  
+
         if (diffA !== diffB) return diffA - diffB;
         return a.totalTimeSlotInSeconds - b.totalTimeSlotInSeconds;
       });
     }
-  
+
     selectedTask = availableTasks[0];
-  
+
     // Nếu task hiện tại đã là ưu tiên, không thay đổi
     if (selectedTaskName === selectedTask.name) return;
-  
+
     // Nếu task hiện tại không phải ưu tiên, chọn lại
     handleSelectTaskBlock(selectedTask.name);
-  }, [isAutoSelectEnabled, todayDataTimeCount, viewMode, tasksForToday, currentTime, selectedTaskName]);
-  
+  };
+
   // cập nhật danh sách taskFortoday
   useEffect(() => {
     if (mode === "auto") {
@@ -579,11 +900,11 @@ const handleStartPause = () => {
     const taskEnd = task.endTime;
     const startMinutes = taskStart.getHours() * 60 + taskStart.getMinutes();
     const endMinutes = taskEnd.getHours() * 60 + taskEnd.getMinutes();
-  
+
     // Kiểm tra trạng thái của task
     const isSelected = selectedTaskName === task.name;
     const isDimmed = selectedTaskName && selectedTaskName !== task.name;
-  
+
     return (
       <div
         className={`task-block ${isSelected ? "selected" : ""} ${
@@ -594,7 +915,7 @@ const handleStartPause = () => {
           height: `${endMinutes - startMinutes}px`,
         }}
         key={task.name}
-        onClick={() => handleSelectTaskBlock(task.name)} 
+        onClick={() => handleSelectTaskBlock(task.name)}
       >
         <div className="task-name">{task.name}</div>
         <button className="select-task-button">
@@ -603,17 +924,18 @@ const handleStartPause = () => {
       </div>
     );
   };
-  
+
   const calculateTimeSlot = (startTime, endTime) => {
-    const diff = new Date(endTime - startTime);
-    const hours = diff.getUTCHours();
-    const minutes = diff.getUTCMinutes();
+    let minutesTotal = Math.floor((new Date(endTime) - new Date(startTime)) / 60000);
+    if (minutesTotal < 0) minutesTotal += 24 * 60;
+    const hours = Math.floor(minutesTotal / 60);
+    const minutes = minutesTotal % 60;
     return `${hours.toString().padStart(2, "0")}:${minutes
       .toString()
       .padStart(2, "0")}`;
   };
-  
-  
+
+
   const getPomodoroBackground = () => {
     if (isFreeMode) return "#d4b3e9";
     switch (currentMode) {
@@ -632,11 +954,24 @@ const handleStartPause = () => {
     const [hours, minutes] = timeSlot.split(":").map(Number);
     return hours * 3600 + minutes * 60;
   };
-  
+
   const handleModeChange = (newMode) => {
+    closeCurrentTimeSession("completed");
+    // Clear timer refs
+    if (isRunning) {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+      elapsedRef.current = getElapsedSeconds();
+      sessionStartRef.current = null;
+    }
+
     // Nếu chỉ thay đổi giữa pomodoro, short-break, long-break
     if (["pomodoro", "short-break", "long-break"].includes(newMode)) {
+      elapsedRef.current = 0;
+      sessionStartRef.current = null;
       setCurrentMode(newMode);
+      setIsRunning(false);
       if (newMode === "pomodoro") {
         setTimeLeft(1500);
       } else if (newMode === "short-break") {
@@ -646,13 +981,13 @@ const handleStartPause = () => {
       }
       return;
     }
-  
+
     // Nếu thay đổi giữa các chế độ auto, manual, free
     setIsRunning(false);
-    setLastTaskStartTime(null);
     setTimeLeft(1500);
     setFreeModeTime(0);
-  
+    elapsedRef.current = 0;
+
     // Bỏ chọn task và record
     setSelectedTaskName(null);
     setIsTaskSelected(false);
@@ -662,7 +997,7 @@ const handleStartPause = () => {
     setTempWork(null);
     setTempTask(null);
     setCurrentRecord(null);
-  
+
     // Cập nhật chế độ
     setMode(newMode);
   };
@@ -672,7 +1007,7 @@ const handleStartPause = () => {
     setTempTask(selectedTask);
     setIsModalOpen(true);
   };
-  
+
   const handleManualSelectWork = (work) => {
     setTempWork((prev) => (prev?.id === work.id ? null : work));
     setTempTask(null);
@@ -683,9 +1018,15 @@ const handleStartPause = () => {
   };
 
   const handleManualSelectionDone = () => {
+    closeCurrentTimeSession("completed");
+    if (intervalRef.current) clearInterval(intervalRef.current);
+    elapsedRef.current = 0;
+    sessionStartRef.current = null;
+    setIsRunning(false);
+    setTimeLeft(TIMER_DURATIONS[currentMode] || TIMER_DURATIONS.pomodoro);
     setSelectedWork(tempWork);
     setSelectedTask(tempTask);
-  
+
     setCurrentTaskManual(
       tempTask
         ? {
@@ -709,10 +1050,10 @@ const handleStartPause = () => {
       setCountdownTimeTask(0);
       setIsTaskSelected(false);
     }
-    
+
     setIsModalOpen(false);
   };
-  
+
 
   const closeModal = () => {
     setTempWork(selectedWork);
@@ -723,7 +1064,7 @@ const handleStartPause = () => {
   const selectedTaskData = todayDataTimeCount.find(
     (task) => task.name === selectedTaskName
   );
-  
+
   const percentCompleted = selectedTaskData
     ? parseInt(selectedTaskData.status.replace('%', ''), 10)
     : 0;
@@ -732,15 +1073,15 @@ const handleStartPause = () => {
         return [...todayDataTimeCount].sort((a, b) => {
           const percentA = parseInt(a.status.replace("%", ""), 10);
           const percentB = parseInt(b.status.replace("%", ""), 10);
-    
+
           if (percentA !== percentB) {
             return percentB - percentA; // Sắp xếp theo phần trăm giảm dần
           }
-    
+
           if (a.totalTimeSlotInSeconds !== b.totalTimeSlotInSeconds) {
             return b.totalTimeSlotInSeconds - a.totalTimeSlotInSeconds; // Sắp xếp theo timeslot giảm dần
           }
-    
+
           return a.name.localeCompare(b.name); // Sắp xếp theo thứ tự chữ cái
         });
       }
@@ -748,9 +1089,19 @@ const handleStartPause = () => {
     }, [todayDataTimeCount, viewMode]);
 
   return (
-    <div className="main-form" data-aos="zoom-in">
-      <header className="menu-bar">
-        <h1>Focus</h1>
+    <div className="main-form focus-page">
+      <header className="focus-page-header">
+        <div>
+          <p>MY WORKSPACE / FOCUS</p>
+          <h1>Focus</h1>
+        </div>
+        <span>
+          {currentTime.toLocaleDateString("vi-VN", {
+            weekday: "long",
+            day: "numeric",
+            month: "long",
+          })}
+        </span>
       </header>
 
       <div className="container-row">
@@ -759,7 +1110,7 @@ const handleStartPause = () => {
       className="today-data-toggle"
       onClick={() => setIsTodayDataVisible((prev) => !prev)}
     >
-      TODAY-DataTimeCount ▼
+      Today's summary <span aria-hidden="true">⌄</span>
     </button>
     {isTodayDataVisible && (
       <div className="today-data-content">
@@ -854,7 +1205,7 @@ const handleStartPause = () => {
     </div>
   </div>
 
-    
+
 </div> {/* code for autoSelect end */}
 
 <div className="timeline-container" ref={timelineRef}>
@@ -930,8 +1281,8 @@ const handleStartPause = () => {
           ) : (
             <p>Empty Task Today</p>
           )}
-        </div> 
-        
+        </div>
+
 )} {/* code for task-list of AUTO MODE end */}
 
 {mode === "manual"  && (
@@ -984,53 +1335,57 @@ const handleStartPause = () => {
 {mode === "free" && (
   <div className="free-mode-container">
     <div className="free-mode-left">
-      <h2>New Record</h2>
+      <h2>New record</h2>
       <div className="record-creation">
         <input
           type="text"
-          placeholder="Enter record name"
+          placeholder="Name this activity"
+          aria-label="New activity name"
           value={recordNameInput}
           onChange={(e) => setRecordNameInput(e.target.value)}
         />
-        <button onClick={handleCreateRecord}>Create</button>
+        <button type="button" onClick={handleCreateRecord}>
+          <FiPlus size={14} aria-hidden="true" />
+          <span>Create</span>
+        </button>
       </div>
       {currentRecord && (
-        <div className="current-record">
-          <p>
-            <strong>Current Record:</strong> {currentRecord.name}
-          </p>
+        <div className="current-record" aria-live="polite">
+          <span>Tracking now</span>
+          <strong>{currentRecord.name}</strong>
         </div>
       )}
-
     </div>
-      
+
     <div className="free-mode-right">
-      <h2>Records</h2>
-      <p>Total Time: {formatTime(totalFreeTime)}</p>
-      <ul>
+      <div className="free-mode-heading">
+        <h2>Records</h2>
+        <span>Total time <strong>{formatTime(totalFreeTime)}</strong></span>
+      </div>
+      <ul className="record-list">
         {records.map((record, index) => (
           <li
-            key={index}
+            key={`${record.name}-${index}`}
             className={record.name === currentRecord?.name ? "active" : ""}
             onClick={() => handleSelectRecord(record.name)}
           >
-            <span>
-              {record.name}: {formatTime(record.time)}
-            </span>
+            <span className="record-name">{record.name}</span>
+            <span className="record-time">{formatTime(record.time)}</span>
             <button
+              type="button"
               className="delete-record-button"
               onClick={(e) => {
                 e.stopPropagation();
                 handleDeleteRecord(record.name);
               }}
+              aria-label={`Delete ${record.name}`}
+              title="Delete record"
             >
-              X
+              <FiTrash2 size={13} aria-hidden="true" />
             </button>
           </li>
-        
         ))}
       </ul>
-
     </div>
   </div>
 )}
@@ -1064,11 +1419,17 @@ const handleStartPause = () => {
 
 
  {/* code for pomodoro and stopwatch start */}
- <div className="pomodoro-timer" style={{ backgroundColor: getPomodoroBackground() }}>  
+ <div className="pomodoro-timer" style={{ backgroundColor: getPomodoroBackground() }}>
   <div className="pomodoro-header">
-    <span className="swap-icon" onClick={toggleFreeMode}>
-      🔄
-    </span>
+    <button
+      type="button"
+      className="swap-icon"
+      onClick={toggleFreeMode}
+      aria-label={isFreeMode ? "Switch to Pomodoro timer" : "Switch to stopwatch"}
+      title={isFreeMode ? "Switch to Pomodoro timer" : "Switch to stopwatch"}
+    >
+      <FiRepeat size={15} aria-hidden="true" />
+    </button>
     <div className="pomodoro-modes">
   {!isFreeMode ? (
     <>
@@ -1135,67 +1496,113 @@ const handleStartPause = () => {
 
 
     {isFreeMode && (
-      <button onClick={() => setFreeModeTime(0)}>Kết thúc</button>
+      <button
+        onClick={() => {
+          closeCurrentTimeSession("completed");
+          setFreeModeTime(0);
+          elapsedRef.current = 0;
+          sessionStartRef.current = null;
+          setIsRunning(false);
+        }}
+      >
+        Kết thúc
+      </button>
     )}
     {!isFreeMode && <button onClick={handleSkip}>Bỏ qua</button>}
   </div>
 </div>
 
-</div> 
+</div>
 
       {isModalOpen && (
-        <div className="modal">
-          <div className="modal-task-content">
-            <div className="modal-left">
-              <h2>Danh sách Work</h2>
-              {Object.values(works).flat().map((work) => (
-                <div
-                  key={work.id}
-                  className={`work-item-focus ${
-                    tempWork?.id === work.id ? "active" : ""
-                  }`}
-                  onClick={() => handleManualSelectWork(work)}
-                >
-                  <h4>{work.name}</h4>
-                  <p>
-                    Ngày: {work.startDate} - {work.endDate}
-                  </p>
-                </div>
-              ))}
-            </div>
-            <div className="divider"></div>
-            <div className="modal-right">
-              <div className="modal-buttons">
-                <button className="focus-button" onClick={handleManualSelectionDone}>
-                  Done
-                </button>
-                <button className="modal-close" onClick={closeModal}>
-                  &times;
-                </button>
+        <div className="focus-select-overlay">
+          <section
+            className="focus-select-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="focus-select-title"
+          >
+            <header className="focus-select-header">
+              <div>
+                <p>MANUAL FOCUS</p>
+                <h2 id="focus-select-title">Choose a work and task</h2>
+                <span>Select the activity you want to track.</span>
               </div>
-              <h2>Danh sách Task</h2>
-              {tempWork && tempWork.subWorks ? (
-                <>
-                  {tempWork.subWorks.map((task, index) => (
-                    <div
-                      key={index}
-                      className={`task-item-focus ${
-                        tempTask?.name === task.name ? "active" : ""
+              <button
+                type="button"
+                className="focus-select-close"
+                onClick={closeModal}
+                aria-label="Close task selection"
+              >
+                <FiX size={18} aria-hidden="true" />
+              </button>
+            </header>
+            <div className="focus-select-grid">
+              <section className="focus-select-pane">
+                <div className="focus-select-pane-heading">
+                  <h3>Works</h3>
+                  <span>{Object.values(works).flat().length}</span>
+                </div>
+                <div className="focus-select-list">
+                  {Object.values(works).flat().map((work) => (
+                    <button
+                      type="button"
+                      key={work.id}
+                      className={`work-item-focus ${
+                        tempWork?.id === work.id ? "active" : ""
                       }`}
-                      onClick={() => handleManualSelectTask(task)}
+                      onClick={() => handleManualSelectWork(work)}
                     >
-                      <h4>{task.name}</h4>
-                      <p>
-                        Thời gian: {task.startTime} - {task.endTime}
-                      </p>
-                    </div>
+                      <strong>{work.name}</strong>
+                      <span>
+                        {work.startDate} – {work.endDate}
+                      </span>
+                    </button>
                   ))}
-                </>
-              ) : (
-                <p>Chọn một Work để xem Task.</p>
-              )}
+                </div>
+              </section>
+              <section className="focus-select-pane">
+                <div className="focus-select-pane-heading">
+                  <h3>Tasks</h3>
+                  <span>{tempWork?.subWorks?.length || 0}</span>
+                </div>
+                <div className="focus-select-list">
+                  {tempWork?.subWorks?.length ? (
+                    tempWork.subWorks.map((task, index) => (
+                      <button
+                        type="button"
+                        key={`${task.name}-${index}`}
+                        className={`task-item-focus ${
+                          tempTask?.name === task.name ? "active" : ""
+                        }`}
+                        onClick={() => handleManualSelectTask(task)}
+                      >
+                        <strong>{task.name}</strong>
+                        <span>
+                          {task.startTime} – {task.endTime}
+                        </span>
+                      </button>
+                    ))
+                  ) : (
+                    <p className="focus-select-empty">
+                      {tempWork
+                        ? "This work has no tasks yet."
+                        : "Choose a work to see its tasks."}
+                    </p>
+                  )}
+                </div>
+              </section>
             </div>
-          </div>
+            <footer className="focus-select-actions">
+              <button
+                type="button"
+                className="focus-select-done"
+                onClick={handleManualSelectionDone}
+              >
+                Done
+              </button>
+            </footer>
+          </section>
         </div>
       )}
 

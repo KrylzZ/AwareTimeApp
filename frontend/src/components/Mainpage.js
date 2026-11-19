@@ -3,6 +3,7 @@ import "../App.css";
 import { FaFacebook } from "react-icons/fa6";
 import { FcGoogle } from "react-icons/fc";
 import { useNavigate } from "react-router-dom";
+import { showAuthToast } from "../utils/authToast";
 
 export default function Mainpage({ toast }) {
   const [users, setUsers] = useState({ userName: "", email: "", password: "" });
@@ -18,7 +19,7 @@ export default function Mainpage({ toast }) {
 
     // Mock login logic
     if (userLogin.email === "test@test.com" && userLogin.password === "123456") {
-      toast.success("Login successful");
+      showAuthToast(toast, "Login successful");
       navigate("/Home");
     } else {
       toast.error("Invalid email or password");
@@ -33,12 +34,12 @@ export default function Mainpage({ toast }) {
     }
 
     // Mock register logic
-    toast.success("Registered successfully");
+    showAuthToast(toast, "Registered successfully");
     setUsers({ userName: "", email: "", password: "" });
   };
 
   const googleAuth = () => {
-    toast.success("Logged in with Google");
+    showAuthToast(toast, "Logged in with Google");
     navigate("/Home");
   };
 

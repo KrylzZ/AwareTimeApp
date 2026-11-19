@@ -2,7 +2,6 @@ import React, { useState, useEffect, useMemo } from "react";
 import { AiFillDelete, AiOutlineUndo } from "react-icons/ai";
 import { BiSearchAlt2 } from "react-icons/bi";
 import { FaChevronDown, FaChevronUp } from "react-icons/fa";
-import "aos/dist/aos.css";
 import "./styles/project.css";
 
 
@@ -43,7 +42,7 @@ const Project = ({
     if (searchQuery) {
       result = result.filter(work =>
         work.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        work.subWorks.some(task =>
+        (work.subWorks || []).some(task =>
           task.name.toLowerCase().includes(searchQuery.toLowerCase())
         )
       );
@@ -269,8 +268,16 @@ const Project = ({
     return Math.round((completedTasks / totalTasks) * 100);
   };
 
+  const formatDate = (date) => {
+    if (!date) return "";
+    return new Date(`${date}T00:00:00`).toLocaleDateString(undefined, {
+      month: "short",
+      day: "numeric",
+    });
+  };
+
   return (
-    <div className="main-form" data-aos="zoom-in">
+    <div className="main-form workspace-project-view">
       <div className="menu-bar">
         <h1>Projects</h1>
         <input
@@ -290,19 +297,19 @@ const Project = ({
           className={viewMode === "ongoing" ? "active" : ""}
           onClick={() => setViewMode("ongoing")}
         >
-          On Going Works
+          Active
         </button>
         <button
           className={viewMode === "completed" ? "active" : ""}
           onClick={() => setViewMode("completed")}
         >
-          Completed Works
+          Completed
         </button>
         <button
           className={viewMode === "recycle" ? "active" : ""}
           onClick={() => setViewMode("recycle")}
         >
-          Recycle Bin
+          Recycle bin
         </button>
       </div>
       <div className="expand-collapse-buttons">
@@ -336,7 +343,7 @@ const Project = ({
                         checked={viewMode === "completed" || work.isCompleted}
                         onChange={() => handleToggleComplete(work)}
                       />
-                      {work.name}
+                      <span>{work.name}</span>
                     </label>
                     <div className="work-actions">
                       {viewMode === "recycle" && (
@@ -365,6 +372,19 @@ const Project = ({
                         )}
                       </button>
                     </div>
+                  </div>
+                  <div className="work-meta">
+                    <span className={`project-type type-${work.type || "doNow"}`}>
+                      {(work.type || "doNow").replace(/([A-Z])/g, " $1")}
+                    </span>
+                    {work.tag && <span className="project-tag">{work.customTag || work.tag}</span>}
+                    <span>
+                      {(work.subWorks || []).length}{" "}
+                      {(work.subWorks || []).length === 1 ? "task" : "tasks"}
+                    </span>
+                    {work.startDate && work.endDate && (
+                      <span>{formatDate(work.startDate)} – {formatDate(work.endDate)}</span>
+                    )}
                   </div>
                   <div className="progress-container progress-container-full">
                     <div className="progress-bar">

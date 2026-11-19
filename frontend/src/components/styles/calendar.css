@@ -1,83 +1,267 @@
-@import '~react-big-calendar/lib/css/react-big-calendar.css';
-
-.main-form {
-  padding: 10px;
+.main-form.calendar-page {
   display: flex;
+  flex: 1;
   flex-direction: column;
+  align-items: stretch;
+  gap: 12px;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  margin: 0;
+  padding: 16px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--prof);
+  color: var(--text);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
+  text-align: left;
+  text-transform: none;
+}
+
+.calendar-page-header {
+  display: flex;
+  flex: 0 0 auto;
   align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 2px 2px 12px;
+  border-bottom: 1px solid var(--border);
 }
 
-.react-big-calendar {
-  width: 98%;
-  height: auto;
-  min-height: 500px;
+.calendar-page-header p {
+  margin: 0 0 3px;
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
 }
 
-.rbc-header {
-  padding: 5px 10px;
-  min-width: 80px;
-  text-align: center;
-  background-color: #6596ff; /* Màu nền xanh */
-  color: white; /* Màu chữ trắng */
-  border-right: 0.5px solid rgb(229, 229, 229); /* Đường kẻ phân cách giữa các cột */
-}
-.rbc-header,
-.rbc-toolbar button {
-  padding: 8px 10px; /* Thêm padding cho thoải mái */
-  font-size: 16px; /* Điều chỉnh kích thước phông chữ */
+.calendar-page-header h1 {
+  margin: 0;
+  color: var(--text);
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.035em;
 }
 
-.rbc-toolbar {
-  background-color: white; /* Màu nền trắng */
-  color: black; /* Màu chữ đen */
-  border-bottom: 1px solid #ccc; /* Đường kẻ ngăn cách màu xám nhạt */
+.calendar-page-header > span {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 500;
 }
 
-.rbc-month-view {
-  box-shadow: rgba(0, 0, 0, 0.2) 0px 22px 70px 4px;
+.calendar-page .rbc-calendar {
+  flex: 1;
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+  color: var(--text);
+  font-size: 11px;
 }
 
-.rbc-event {
-  background-color: lightblue; /* Đổi màu sự kiện nếu cần */
-  border-radius: 5px;
+.calendar-page .rbc-toolbar {
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 0 0 10px;
+  color: var(--text);
 }
 
-.rbc-toolbar-label {
-  min-width: 140px;
-  text-align: center;
+.calendar-page .rbc-toolbar-label {
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 700;
 }
 
-.rbc-btn-group button {
-  color: #333;
+.calendar-page .rbc-btn-group {
+  display: inline-flex;
+  gap: 4px;
 }
 
-/* Đặt màu trắng cho các ô ngày trong tháng */
-.rbc-day-bg {
-  background-color: white;
+.calendar-page .rbc-toolbar button {
+  min-height: 32px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--prof);
+  color: var(--text);
+  font-size: 10px;
+  font-weight: 600;
+  box-shadow: none;
 }
 
-/* Đặt màu sáng hơn cho ngày hôm nay */
-.rbc-today {
-  background-color: rgb(70, 227, 232) !important; /* Sử dụng !important để đảm bảo áp dụng */
+.calendar-page .rbc-toolbar button:hover,
+.calendar-page .rbc-toolbar button:focus {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 7%, var(--prof));
+  color: var(--accent);
 }
 
-/* Đặt màu xám cho các ngày không thuộc tháng hiện tại */
-.rbc-off-range-bg {
-  background-color: #f0f0f0;
+.calendar-page .rbc-toolbar button.rbc-active,
+.calendar-page .rbc-toolbar button.rbc-active:hover,
+.calendar-page .rbc-toolbar button.rbc-active:focus {
+  border-color: color-mix(in srgb, var(--accent) 28%, var(--border));
+  background: color-mix(in srgb, var(--accent) 12%, var(--prof));
+  color: var(--accent);
+  box-shadow: none;
 }
 
-/* Điều chỉnh kích thước và kiểu chữ của sự kiện trên lịch */
-.rbc-event {
-  height: 15px; /* Thiết lập chiều cao của sự kiện */
-  padding: 2px; /* Padding nhỏ để text không dính sát vào cạnh */
-  font-size: 12px; /* Giảm kích thước font chữ */
-  overflow: hidden; /* Ẩn text nếu nó dài hơn khung hiển thị */
-  white-space: nowrap; /* Không cho text xuống dòng */
-  text-overflow: ellipsis; /* Hiển thị dấu ... nếu text quá dài */
+.calendar-page .rbc-month-view,
+.calendar-page .rbc-time-view,
+.calendar-page .rbc-agenda-view {
+  flex: 1 1 0;
+  min-height: 0;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--prof);
+  overflow: hidden;
 }
 
-.rbc-event-content {
-  line-height: 13px;
-  margin-left: 10px;
+.calendar-page .rbc-header {
+  padding: 9px 5px;
+  border-bottom: 1px solid var(--border);
+  border-left: 0;
+  background: var(--bg);
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
+.calendar-page .rbc-header + .rbc-header {
+  border-left: 1px solid var(--border);
+}
+
+.calendar-page .rbc-day-bg {
+  background: var(--prof);
+}
+
+.calendar-page .rbc-day-bg + .rbc-day-bg {
+  border-left: 1px solid var(--border);
+}
+
+.calendar-page .rbc-month-row + .rbc-month-row {
+  border-top: 1px solid var(--border);
+}
+
+.calendar-page .rbc-off-range-bg {
+  background: var(--bg);
+}
+
+.calendar-page .rbc-today {
+  background: color-mix(in srgb, var(--accent) 7%, var(--prof));
+}
+
+.calendar-page .rbc-date-cell {
+  padding: 5px 7px;
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.calendar-page .rbc-date-cell.rbc-now {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.calendar-page .rbc-event {
+  min-height: 20px;
+  padding: 3px 6px;
+  overflow: hidden;
+  font-size: 9px;
+  font-weight: 650;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  box-shadow: none;
+}
+
+.calendar-page .rbc-event:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.calendar-page .rbc-event-content {
+  overflow: hidden;
+  color: inherit;
+  text-overflow: ellipsis;
+}
+
+.calendar-page .rbc-show-more {
+  padding: 2px 5px;
+  color: var(--accent);
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.calendar-page .rbc-time-header,
+.calendar-page .rbc-time-content,
+.calendar-page .rbc-timeslot-group,
+.calendar-page .rbc-time-gutter .rbc-timeslot-group {
+  border-color: var(--border);
+}
+
+.calendar-page .rbc-time-gutter,
+.calendar-page .rbc-label {
+  color: var(--muted);
+  font-size: 9px;
+}
+
+.calendar-page .rbc-current-time-indicator {
+  background: var(--danger);
+}
+
+.calendar-page .rbc-agenda-view table.rbc-agenda-table {
+  border-color: var(--border);
+  color: var(--text);
+}
+
+.calendar-page .rbc-agenda-view table.rbc-agenda-table thead > tr > th {
+  border-color: var(--border);
+  background: var(--bg);
+  color: var(--muted);
+}
+
+.calendar-page .rbc-agenda-view table.rbc-agenda-table tbody > tr > td {
+  border-color: var(--border);
+  color: var(--text);
+}
+
+.calendar-page .rbc-agenda-date-cell,
+.calendar-page .rbc-agenda-time-cell {
+  color: var(--muted) !important;
+}
+
+@media (max-width: 700px) {
+  .main-form.calendar-page {
+    gap: 9px;
+    padding: 11px;
+  }
+
+  .calendar-page-header {
+    align-items: flex-start;
+  }
+
+  .calendar-page-header > span {
+    max-width: 42%;
+    text-align: right;
+  }
+
+  .calendar-page .rbc-toolbar {
+    justify-content: space-between;
+    gap: 7px;
+  }
+
+  .calendar-page .rbc-toolbar-label {
+    order: -1;
+    flex-basis: 100%;
+    text-align: left;
+  }
+
+  .calendar-page .rbc-toolbar button {
+    min-height: 30px;
+    padding: 0 7px;
+  }
+}

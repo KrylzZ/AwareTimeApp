@@ -2,6 +2,7 @@ import React, { useEffect } from "react";
 import "./notification.css";
 import Aos from "aos";
 import "aos/dist/aos.css";
+import { FiX } from "react-icons/fi";
 
 const Notification = ({ closeNotifi, upcomingTasks }) => {
   console.log(upcomingTasks);
@@ -18,7 +19,9 @@ const Notification = ({ closeNotifi, upcomingTasks }) => {
     >
       <div className="not-header">
         <h3>Today's Tasks</h3>
-        <button onClick={closeNotifi}>X</button>
+        <button onClick={closeNotifi} aria-label="Close notifications">
+          <FiX size={18} aria-hidden="true" />
+        </button>
       </div>
       <div className="not-items">
         {upcomingTasks.length === 0 && (

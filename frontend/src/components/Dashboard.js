@@ -1,7 +1,11 @@
 import React, { useState, useEffect } from "react";
-import Aos from "aos";
 import "./styles/dashboard.css";
-import { AiFillDelete, AiFillEdit, AiOutlinePlus } from "react-icons/ai";
+import {
+  AiFillDelete,
+  AiFillEdit,
+  AiOutlineClose,
+  AiOutlinePlus,
+} from "react-icons/ai";
 
 const Dashboard = ({
   works,
@@ -13,8 +17,12 @@ const Dashboard = ({
   taskCompletionStatus,
   setTaskCompletionStatus,
 }) => {
+  const dragMimeType = "application/x-awaretime-work";
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
+  const [draggedWorkId, setDraggedWorkId] = useState(null);
+  const [dragOverType, setDragOverType] = useState(null);
+  const [dragError, setDragError] = useState("");
 
   const [formData, setFormData] = useState({
     id: null,
@@ -41,10 +49,6 @@ const Dashboard = ({
   });
 
   const [editMode, setEditMode] = useState(false);
-
-  useEffect(() => {
-    Aos.init({ duration: 1000 });
-  }, []);
 
   useEffect(() => {
     if (isModalOpen || isTaskModalOpen) {
@@ -329,32 +333,82 @@ const Dashboard = ({
     });
   };
 
-  const handleDragStart = (e, work, type) => {
-    e.dataTransfer.setData("work", JSON.stringify({ ...work, type }));
+  const handleDragStart = (e, work, sourceType) => {
+    const payload = JSON.stringify({ workId: work.id, sourceType });
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData(dragMimeType, payload);
+    e.dataTransfer.setData("text/plain", payload);
+    setDraggedWorkId(work.id);
+    setDragError("");
   };
 
-  const handleDrop = (e, newType) => {
-    const data = JSON.parse(e.dataTransfer.getData("work"));
+  const handleDrop = (e, targetType) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDraggedWorkId(null);
+    setDragOverType(null);
 
-    if (data.type === newType) return;
+    const rawPayload =
+      e.dataTransfer.getData(dragMimeType) || e.dataTransfer.getData("text/plain");
+    if (!rawPayload) return;
+
+    let payload;
+    try {
+      payload = JSON.parse(rawPayload);
+    } catch {
+      setDragError("Couldn't read that work item. Try dragging it again.");
+      return;
+    }
+
+    if (!payload || typeof payload !== "object") {
+      setDragError("That work item can't be moved to this group.");
+      return;
+    }
+
+    const { workId, sourceType } = payload;
+    if (
+      workId === undefined ||
+      workId === null ||
+      !sourceType ||
+      !Array.isArray(works[sourceType]) ||
+      !Array.isArray(works[targetType])
+    ) {
+      setDragError("That work item can't be moved to this group.");
+      return;
+    }
+
+    if (sourceType === targetType) {
+      setDragError("");
+      return;
+    }
+
+    const sourceHasWork = works[sourceType].some((work) => work.id === workId);
+    if (!sourceHasWork || works[targetType].some((work) => work.id === workId)) {
+      setDragError("This work item has changed. Refresh the board and try again.");
+      return;
+    }
 
     setWorks((prevWorks) => {
-      const updatedSourceWorks = prevWorks[data.type].filter(
-        (work) => work.id !== data.id
-      );
-      const updatedTargetWorks = [
-        ...prevWorks[newType],
-        { ...data, type: newType },
-      ];
+      const sourceWorks = prevWorks[sourceType] || [];
+      const targetWorks = prevWorks[targetType] || [];
+      const currentWork = sourceWorks.find((work) => work.id === workId);
+      if (!currentWork || targetWorks.some((work) => work.id === workId)) {
+        return prevWorks;
+      }
+
       return {
         ...prevWorks,
-        [data.type]: updatedSourceWorks,
-        [newType]: updatedTargetWorks,
+        [sourceType]: sourceWorks.filter((work) => work.id !== workId),
+        [targetType]: [...targetWorks, { ...currentWork, type: targetType }],
       };
     });
+    setDragError("");
   };
 
-  const allowDrop = (e) => e.preventDefault();
+  const allowDrop = (e) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+  };
 
   const formatDate = (dateString) => {
     if (!dateString) return "";
@@ -363,118 +417,220 @@ const Dashboard = ({
   };
 
   return (
-    <div className="home-body-conatiner" data-aos="zoom-in">
+    <div className="home-body-conatiner">
       <header id="dash-header" className="menu-bar">
         <h1>Dashboard</h1>
       </header>
-      <button className="add-work-btn" onClick={handleAddNewWork}>
-        Add new work
-      </button>
+      <div className="board-view-toolbar">
+        <div>
+          <h2>Work board</h2>
+          <p>Drag a card to move it to another group.</p>
+        </div>
+        <button className="add-work-btn" onClick={handleAddNewWork}>
+          <AiOutlinePlus size={15} />
+          <span>Add work</span>
+        </button>
+      </div>
+      {dragError && (
+        <p className="drag-error" role="status">
+          {dragError}
+        </p>
+      )}
 
       {isModalOpen && (
-        <div className="modal">
-          <div className="modal-content">
-            <h2>{editMode ? "Edit Work" : "Add New Work"}</h2>
-            <input
-              type="text"
-              placeholder="Enter work name"
-              name="name"
-              value={formData.name}
-              onChange={handleFormChange}
-            />
-            <div className="form-row">
-              <select
-                name="type"
-                value={formData.type}
-                onChange={handleFormChange}
+        <div className="workspace-modal-overlay">
+          <section
+            className="workspace-dialog work-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="work-dialog-title"
+          >
+            <header className="workspace-dialog-header">
+              <div>
+                <p className="workspace-dialog-eyebrow">
+                  {editMode ? "WORKSPACE" : "NEW WORK"}
+                </p>
+                <h2 id="work-dialog-title">
+                  {editMode ? "Edit work" : "Add new work"}
+                </h2>
+                <p className="workspace-dialog-description">
+                  Keep the details and timeframe for this work together.
+                </p>
+              </div>
+              <button
+                type="button"
+                className="workspace-dialog-close"
+                onClick={handleCancel}
+                aria-label="Close dialog"
               >
-                <option value="">Select type</option>
-                <option value="doNow">Do now</option>
-                <option value="schedule">Schedule</option>
-                <option value="delegate">Delegate</option>
-                <option value="drop">Drop</option>
-              </select>
-              <select
-                name="tag"
-                value={formData.tag}
-                onChange={(e) => {
-                  handleFormChange(e);
-                  if (e.target.value === "Other") {
-                    setFormData((prev) => ({ ...prev, customTag: "" }));
-                  } else {
-                    setFormData((prev) => ({ ...prev, customTag: null }));
-                  }
-                }}
-              >
-                <option value="">Select tag</option>
-                <option value="Học tập">Học tập</option>
-                <option value="Làm việc">Làm việc</option>
-                <option value="Nghỉ ngơi">Nghỉ ngơi</option>
-                <option value="Giải trí">Giải trí</option>
-                <option value="Other">Other</option>
-              </select>
-              {formData.tag === "Other" && (
+                <AiOutlineClose size={17} />
+              </button>
+            </header>
+            <div className="workspace-dialog-body work-dialog-body">
+              <label className="workspace-field">
+                <span>Work name</span>
                 <input
                   type="text"
-                  placeholder="Enter here"
-                  name="customTag"
-                  value={formData.customTag || ""}
+                  placeholder="e.g. Product launch"
+                  name="name"
+                  value={formData.name}
                   onChange={handleFormChange}
+                  autoFocus
                 />
-              )}
+              </label>
+              <div className="workspace-form-grid">
+                <label className="workspace-field">
+                  <span>Board group</span>
+                  <select
+                    name="type"
+                    value={formData.type}
+                    onChange={handleFormChange}
+                  >
+                    <option value="">Select group</option>
+                    <option value="doNow">Do now</option>
+                    <option value="schedule">Schedule</option>
+                    <option value="delegate">Delegate</option>
+                    <option value="drop">Drop</option>
+                  </select>
+                </label>
+                <label className="workspace-field">
+                  <span>Category</span>
+                  <select
+                    name="tag"
+                    value={formData.tag}
+                    onChange={(e) => {
+                      handleFormChange(e);
+                      if (e.target.value === "Other") {
+                        setFormData((prev) => ({ ...prev, customTag: "" }));
+                      } else {
+                        setFormData((prev) => ({ ...prev, customTag: null }));
+                      }
+                    }}
+                  >
+                    <option value="">Select category</option>
+                    <option value="Học tập">Học tập</option>
+                    <option value="Làm việc">Làm việc</option>
+                    <option value="Nghỉ ngơi">Nghỉ ngơi</option>
+                    <option value="Giải trí">Giải trí</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </label>
+                {formData.tag === "Other" && (
+                  <label className="workspace-field">
+                    <span>Custom category</span>
+                    <input
+                      type="text"
+                      placeholder="Enter a category"
+                      name="customTag"
+                      value={formData.customTag || ""}
+                      onChange={handleFormChange}
+                    />
+                  </label>
+                )}
+              </div>
+              <div className="workspace-form-grid work-date-grid">
+                <label className="workspace-field">
+                  <span>Start date</span>
+                  <input
+                    type="date"
+                    name="startDate"
+                    value={formData.startDate}
+                    onChange={handleFormChange}
+                  />
+                </label>
+                <label className="workspace-field">
+                  <span>Due date</span>
+                  <input
+                    type="date"
+                    name="endDate"
+                    value={formData.endDate}
+                    onChange={handleFormChange}
+                  />
+                </label>
+              </div>
+              <label className="workspace-field">
+                <span>Description <small>Optional</small></span>
+                <textarea
+                  placeholder="Add context, goals, or notes..."
+                  name="describe"
+                  value={formData.describe}
+                  onChange={handleFormChange}
+                  rows="4"
+                />
+              </label>
             </div>
-            <div className="form-row">
-              <input
-                type="date"
-                name="startDate"
-                value={formData.startDate}
-                onChange={handleFormChange}
-              />
-              <input
-                type="date"
-                name="endDate"
-                value={formData.endDate}
-                onChange={handleFormChange}
-              />
-            </div>
-            <textarea
-              placeholder="Describe work (use # for hashtags)"
-              name="describe"
-              value={formData.describe}
-              onChange={handleFormChange}
-              rows="4"
-            ></textarea>
-            <div className="modal-buttons">
-              <button onClick={handleDone}>Done</button>
-              <button onClick={handleCancel}>Cancel</button>
-            </div>
-          </div>
+            <footer className="workspace-dialog-actions">
+              <button
+                type="button"
+                className="workspace-secondary-button"
+                onClick={handleCancel}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="workspace-primary-button"
+                onClick={handleDone}
+              >
+                {editMode ? "Save changes" : "Create work"}
+              </button>
+            </footer>
+          </section>
         </div>
       )}
 
       {isTaskModalOpen && (
-        <div className="modal modal-task">
-          <div className="modal-content modal-task-content">
-            <div className="modal-left">
-              <h2>Add Task for {taskFormData.workName}</h2>
+        <div className="workspace-modal-overlay">
+          <section
+            className="workspace-dialog task-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="task-dialog-title"
+          >
+            <header className="workspace-dialog-header">
+              <div>
+                <p className="workspace-dialog-eyebrow">
+                  TASKS / {taskFormData.workName}
+                </p>
+                <h2 id="task-dialog-title">Add a task</h2>
+                <p className="workspace-dialog-description">
+                  Set a time and repeat schedule for this task.
+                </p>
+              </div>
+              <button
+                type="button"
+                className="workspace-dialog-close"
+                onClick={handleCancel}
+                aria-label="Close dialog"
+              >
+                <AiOutlineClose size={17} />
+              </button>
+            </header>
+            <div className="task-dialog-layout">
+            <div className="task-compose-pane">
+              <div className="workspace-dialog-body task-form-body">
               <input
                 type="text"
-                placeholder="Enter task name"
+                placeholder="Task name"
                 name="taskName"
                 value={taskFormData.taskName}
                 onChange={handleTaskFormChange}
+                aria-label="Task name"
+                autoFocus
               />
               <textarea
-                placeholder="Task description"
+                placeholder="Description (optional)"
                 name="taskDescription"
                 value={taskFormData.taskDescription}
                 onChange={handleTaskFormChange}
-                rows="4"
+                rows="3"
+                aria-label="Task description"
               ></textarea>
-              <div className="form-row-inline">
+              <div className="form-row-inline task-time-fields">
   <div>
-    <label>Start Time</label>
+                <label htmlFor="task-start-time">Start time</label>
     <input
+                  id="task-start-time"
       type="time"
       name="startTime"
       value={taskFormData.startTime}
@@ -482,8 +638,9 @@ const Dashboard = ({
     />
   </div>
   <div>
-    <label>End Time</label>
+    <label htmlFor="task-end-time">End time</label>
     <input
+      id="task-end-time"
       type="time"
       name="endTime"
       value={taskFormData.endTime}
@@ -491,8 +648,9 @@ const Dashboard = ({
     />
   </div>
   <div>
-    <label>Repeat</label>
+    <label htmlFor="task-repeat-option">Repeat</label>
     <select
+      id="task-repeat-option"
       name="repeatOption"
       value={taskFormData.repeatOption}
       onChange={(e) => {
@@ -588,7 +746,7 @@ const Dashboard = ({
 
     {/* Các trường tùy chỉnh theo đơn vị lặp */}
     {taskFormData.customRepeat.repeatUnit === "tuần" && (
-      <div className="form-row">
+      <div className="form-row repeat-weekdays">
         <label>Lặp lại vào:</label>
         {["T2", "T3", "T4", "T5", "T6", "T7", "CN"].map((day) => (
           <label key={day} className="repeat-day-option">
@@ -647,13 +805,10 @@ const Dashboard = ({
   )}
   </div>
 )}
-              <div className="modal-buttons">
-                <button onClick={handleDoneTask}>Add Task</button>
-                <button onClick={handleCancel}>Cancel</button>
               </div>
             </div>
-            <div className="modal-right">
-              <h2>Existing Tasks</h2>
+            <aside className="task-existing-pane">
+              <h3>Tasks in this work</h3>
               {(() => {
                 const workType = Object.keys(works).find((type) =>
                   works[type].some((work) => work.id === taskFormData.workId)
@@ -667,7 +822,7 @@ const Dashboard = ({
                     {work.subWorks.map((subWork, index) => (
                       <li key={index}>
                         <h4>{subWork.name}</h4>
-                        <p>{subWork.description}</p>
+                        {subWork.description && <p>{subWork.description}</p>}
                         <p>
                           {subWork.startTime} - {subWork.endTime}
                         </p>
@@ -703,27 +858,60 @@ const Dashboard = ({
                   <p>No tasks available.</p>
                 );
               })()}
+            </aside>
             </div>
-          </div>
+            <footer className="workspace-dialog-actions">
+              <button
+                type="button"
+                className="workspace-secondary-button"
+                onClick={handleCancel}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="workspace-primary-button"
+                onClick={handleDoneTask}
+              >
+                Add task
+              </button>
+            </footer>
+          </section>
         </div>
       )}
 
       <main className="body-content">
         {["doNow", "schedule", "delegate", "drop"].map((type) => (
           <div
-            className="work-box"
+            className={`work-box${dragOverType === type ? " drag-over" : ""}`}
             key={type}
             onDrop={(e) => handleDrop(e, type)}
             onDragOver={allowDrop}
+            onDragEnter={() => setDragOverType(type)}
+            onDragLeave={(e) => {
+              if (!e.currentTarget.contains(e.relatedTarget)) {
+                setDragOverType(null);
+              }
+            }}
           >
-            <h2>{type.charAt(0).toUpperCase() + type.slice(1)}</h2>
+            <h2>
+              {type.charAt(0).toUpperCase() + type.slice(1)}
+              <span className="column-count">{works[type].length}</span>
+            </h2>
             <div className="work-list">
+              {works[type].length === 0 && (
+                <p className="empty-column">Drop work here or add a new item.</p>
+              )}
               {works[type].map((work) => (
                 <div
                   key={work.id}
-                  className="work"
+                  className={`work${draggedWorkId === work.id ? " is-dragging" : ""}`}
                   draggable
                   onDragStart={(e) => handleDragStart(e, work, type)}
+                  onDragEnd={() => {
+                    setDraggedWorkId(null);
+                    setDragOverType(null);
+                  }}
                 >
                   <div className="work-info">
                     <input
